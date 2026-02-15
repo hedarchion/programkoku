@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, Trash2, ListChecks, ChevronDown, ChevronUp, Image as ImageIcon, Calendar, Clock, MapPin, Users, AlertCircle, FileText, User } from 'lucide-react'
 
 import { useSettings } from '@/lib/settings-context'
@@ -15,7 +14,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { Badge } from '@/components/ui/badge'
 
 export interface OprFormData {
   namaProgram: string
@@ -35,6 +33,14 @@ export interface OprFormData {
 interface Props {
   onDataChange: (data: OprFormData) => void
 }
+
+// Section Header Component
+const SectionHeader = ({ number, title }: { number: string; title: string }) => (
+  <div className="flex items-center gap-2 mb-4">
+    <span className="section-badge">{number}</span>
+    <h2 className="text-sm font-bold uppercase tracking-widest text-slate-800">{title}</h2>
+  </div>
+)
 
 export default function OprForm({ onDataChange }: Props) {
   const { settings } = useSettings()
@@ -180,270 +186,271 @@ export default function OprForm({ onDataChange }: Props) {
   const completedAktiviti = data.aktiviti.filter(a => a.trim()).length
 
   return (
-    <div className="space-y-2">
-      {/* Maklumat Program */}
-      <Collapsible open={openSections.program} onOpenChange={() => toggleSection('program')}>
-        <Card className="shadow-sm border-slate-200 dark:border-slate-700 overflow-hidden">
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 py-2.5 px-3 sm:px-4 bg-slate-50/50 dark:bg-slate-800/30 transition-colors">
-              <CardTitle className="text-sm flex items-center justify-between font-semibold">
-                <span className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-emerald-600" />
-                  Maklumat Program
-                </span>
+    <div className="space-y-8">
+      {/* Section 01: Maklumat Program */}
+      <section>
+        <SectionHeader number="01" title="Maklumat Program" />
+        <div className="border-l border-t border-[var(--grid-border)]">
+          <Collapsible open={openSections.program} onOpenChange={() => toggleSection('program')}>
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between p-4 border-r border-b border-[var(--grid-border)] bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wide">Butiran Program</span>
+                </div>
                 <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openSections.program ? 'rotate-180' : ''}`} />
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 p-3 sm:p-4 pt-2">
-              {/* Nama Program - Full Width */}
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  Nama Program <span className="text-red-500">*</span>
-                </Label>
-                <Input 
-                  value={data.namaProgram} 
-                  onChange={e => updateField('namaProgram', e.target.value)} 
-                  placeholder="MESYUARAT AGUNG PPIM 2026"
-                  className="h-9 text-sm"
-                />
               </div>
-
-              {/* Tarikh & Masa - 2 columns */}
-              <div className="space-y-1">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3 text-slate-400" />
-                  Tarikh
-                </Label>
-                <Input 
-                  type="date"
-                  value={data.tarikh} 
-                  onChange={e => updateField('tarikh', e.target.value)} 
-                  className="h-9 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  <Clock className="h-3 w-3 text-slate-400" />
-                  Masa
-                </Label>
-                <Input 
-                  value={data.masa} 
-                  onChange={e => updateField('masa', e.target.value)} 
-                  placeholder="7.30 pagi"
-                  className="h-9 text-sm"
-                />
-              </div>
-
-              {/* Tempat - Full Width */}
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  <MapPin className="h-3 w-3 text-slate-400" />
-                  Tempat
-                </Label>
-                <Input 
-                  value={data.tempat} 
-                  onChange={e => updateField('tempat', e.target.value)} 
-                  placeholder="Surau SK Ayer Tawar"
-                  className="h-9 text-sm"
-                />
-              </div>
-
-              {/* PGB - Full Width */}
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  <User className="h-3 w-3 text-slate-400" />
-                  Nama Penuh PGB
-                </Label>
-                <Input 
-                  value={data.namaPgb} 
-                  onChange={e => updateField('namaPgb', e.target.value)} 
-                  placeholder="Nama Guru Besar"
-                  className="h-9 text-sm"
-                />
-              </div>
-
-              {/* Pegawai Terlibat - Full Width */}
-              <div className="space-y-1 sm:col-span-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-medium flex items-center gap-1.5">
-                    <Users className="h-3 w-3 text-slate-400" />
-                    Pegawai Terlibat
-                  </Label>
-                  <span className="text-[10px] text-slate-400">Satu nama per baris</span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 border-r border-b border-[var(--grid-border)]">
+                {/* Nama Program - Full Width */}
+                <div className="p-4 border-b border-[var(--grid-border)] md:col-span-2 bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2 flex items-center gap-1">
+                    Nama Program <span className="text-red-500">*</span>
+                  </label>
+                  <Input 
+                    value={data.namaProgram} 
+                    onChange={e => updateField('namaProgram', e.target.value)} 
+                    placeholder="MESYUARAT AGUNG PPIM 2026"
+                    className="text-sm border-slate-200 focus:border-primary" 
+                  />
                 </div>
-                <Textarea
-                  value={pegawaiInput}
-                  onChange={e => handlePegawaiChange(e.target.value)}
-                  placeholder="PN. KHADIJAH&#10;PN. IFA YUSNANI&#10;..."
-                  rows={4}
-                  className="text-sm font-mono resize-none"
-                />
-              </div>
 
-              {/* Kehadiran - Full Width */}
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-medium">Kehadiran / Sasaran</Label>
-                <Textarea
-                  value={data.kehadiranSasaran}
-                  onChange={e => updateField('kehadiranSasaran', e.target.value)}
-                  placeholder="Semua murid/peraserta..."
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-              </div>
+                {/* Tarikh */}
+                <div className="p-4 border-b md:border-r border-[var(--grid-border)] bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2 flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Tarikh
+                  </label>
+                  <Input 
+                    type="date"
+                    value={data.tarikh} 
+                    onChange={e => updateField('tarikh', e.target.value)} 
+                    className="text-sm border-slate-200 focus:border-primary"
+                  />
+                </div>
 
-              {/* Isu - Full Width */}
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  <AlertCircle className="h-3 w-3 text-slate-400" />
-                  Isu / Masalah
-                </Label>
-                <Textarea
-                  value={data.isuMasalah}
-                  onChange={e => updateField('isuMasalah', e.target.value)}
-                  placeholder="Berjalan seperti telah dirancang"
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-              </div>
+                {/* Masa */}
+                <div className="p-4 border-b border-[var(--grid-border)] bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Masa
+                  </label>
+                  <Input 
+                    value={data.masa} 
+                    onChange={e => updateField('masa', e.target.value)} 
+                    placeholder="7.30 pagi"
+                    className="text-sm border-slate-200 focus:border-primary"
+                  />
+                </div>
 
-              {/* Disediakan Oleh - Full Width */}
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-medium">Disediakan Oleh</Label>
-                <Input
-                  value={data.disediakanOleh}
-                  onChange={e => updateField('disediakanOleh', e.target.value)}
-                  placeholder="Nama / Jawatan"
-                  className="h-9 text-sm"
-                />
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+                {/* Tempat - Full Width */}
+                <div className="p-4 border-b border-[var(--grid-border)] md:col-span-2 bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Tempat
+                  </label>
+                  <Input 
+                    value={data.tempat} 
+                    onChange={e => updateField('tempat', e.target.value)} 
+                    placeholder="Surau SK Ayer Tawar"
+                    className="text-sm border-slate-200 focus:border-primary"
+                  />
+                </div>
 
-      {/* Senarai Aktiviti */}
-      <Collapsible open={openSections.aktiviti} onOpenChange={() => toggleSection('aktiviti')}>
-        <Card className="shadow-sm border-slate-200 dark:border-slate-700 overflow-hidden">
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 py-2.5 px-3 sm:px-4 bg-slate-50/50 dark:bg-slate-800/30 transition-colors">
-              <CardTitle className="text-sm flex items-center justify-between font-semibold">
-                <span className="flex items-center gap-2">
-                  <ListChecks className="h-4 w-4 text-emerald-600" />
-                  Senarai Aktiviti
-                  {completedAktiviti > 0 && (
-                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                      {completedAktiviti}
-                    </Badge>
-                  )}
-                </span>
-                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openSections.aktiviti ? 'rotate-180' : ''}`} />
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="space-y-2 p-3 sm:p-4 pt-2">
-              {data.aktiviti.map((a, index) => (
-                <div key={index} className="flex gap-2 items-start group">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 mt-1">
-                    {index + 1}
+                {/* Nama PGB - Full Width */}
+                <div className="p-4 border-b border-[var(--grid-border)] md:col-span-2 bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2 flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    Nama Penuh PGB
+                  </label>
+                  <Input 
+                    value={data.namaPgb} 
+                    onChange={e => updateField('namaPgb', e.target.value)} 
+                    placeholder="Nama Guru Besar"
+                    className="text-sm border-slate-200 focus:border-primary"
+                  />
+                </div>
+
+                {/* Pegawai Terlibat - Full Width */}
+                <div className="p-4 border-b border-[var(--grid-border)] md:col-span-2 bg-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[10px] font-bold uppercase opacity-50 flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      Pegawai Terlibat
+                    </label>
+                    <span className="text-[10px] text-slate-400">Satu nama per baris</span>
                   </div>
-                  <Textarea 
-                    value={a} 
-                    onChange={e => updateAktiviti(index, e.target.value)} 
-                    placeholder={`Aktiviti ${index + 1}...`}
-                    className="flex-1 text-sm min-h-[60px] resize-none"
+                  <Textarea
+                    value={pegawaiInput}
+                    onChange={e => handlePegawaiChange(e.target.value)}
+                    placeholder="PN. KHADIJAH&#10;PN. IFA YUSNANI&#10;..."
+                    rows={4}
+                    className="text-sm font-mono border-slate-200 focus:border-primary resize-none"
+                  />
+                </div>
+
+                {/* Kehadiran - Full Width */}
+                <div className="p-4 border-b border-[var(--grid-border)] md:col-span-2 bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2">Kehadiran / Sasaran</label>
+                  <Textarea
+                    value={data.kehadiranSasaran}
+                    onChange={e => updateField('kehadiranSasaran', e.target.value)}
+                    placeholder="Semua murid/peraserta..."
                     rows={2}
+                    className="text-sm border-slate-200 focus:border-primary resize-none"
                   />
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1"
-                    onClick={() => removeAktiviti(index)}
-                    disabled={data.aktiviti.length <= 1}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                  </Button>
                 </div>
-              ))}
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full h-9 gap-1.5 text-xs mt-1 border-dashed border-slate-300 hover:border-emerald-400 hover:bg-emerald-50/50 transition-all duration-200" 
-                onClick={addAktiviti}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Tambah Aktiviti</span>
-              </Button>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
 
-      {/* Gambar */}
-      <Card className="shadow-sm border-slate-200 dark:border-slate-700 overflow-hidden">
-        <CardHeader className="py-2.5 px-3 sm:px-4 bg-slate-50/50 dark:bg-slate-800/30">
-          <CardTitle className="text-sm flex items-center justify-between font-semibold">
-            <span className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4 text-emerald-600" />
-              Gambar
-            </span>
-            <Badge 
-              variant={data.gambarBase64.length > 0 ? "default" : "secondary"} 
-              className="text-[10px] h-5 px-1.5"
-            >
-              {data.gambarBase64.length}/8
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 p-3 sm:p-4">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="text-amber-600 font-medium">Format:</span> JPG, PNG, WEBP, HEIC • Max 5MB
-          </p>
-          
-
-          <Input
-            type="file"
-            accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/heic,image/heif"
-            multiple
-            onChange={e => {
-              void handleImageUpload(e.target.files)
-              e.target.value = ''
-            }}
-            className="h-9 text-sm file:text-xs file:mr-3"
-          />
-
-          {data.gambarBase64.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1">
-              {data.gambarBase64.map((img, index) => (
-                <div key={index} className="relative rounded-lg overflow-hidden border bg-slate-50 dark:bg-slate-800 aspect-square group">
-                  <img 
-                    src={img} 
-                    alt={`Gambar ${index + 1}`} 
-                    className="w-full h-full object-cover" 
+                {/* Isu - Full Width */}
+                <div className="p-4 border-b border-[var(--grid-border)] md:col-span-2 bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Isu / Masalah
+                  </label>
+                  <Textarea
+                    value={data.isuMasalah}
+                    onChange={e => updateField('isuMasalah', e.target.value)}
+                    placeholder="Berjalan seperti telah dirancang"
+                    rows={2}
+                    className="text-sm border-slate-200 focus:border-primary resize-none"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeImage(index)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                  <span className="absolute bottom-1 left-1 text-[9px] text-white bg-black/50 px-1.5 py-0.5 rounded">
-                    {index + 1}
-                  </span>
                 </div>
-              ))}
+
+                {/* Disediakan Oleh - Full Width */}
+                <div className="p-4 border-b border-[var(--grid-border)] md:col-span-2 bg-white">
+                  <label className="block text-[10px] font-bold uppercase opacity-50 mb-2">Disediakan Oleh</label>
+                  <Input
+                    value={data.disediakanOleh}
+                    onChange={e => updateField('disediakanOleh', e.target.value)}
+                    placeholder="Nama / Jawatan"
+                    className="text-sm border-slate-200 focus:border-primary"
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      </section>
+
+      {/* Section 02: Senarai Aktiviti */}
+      <section>
+        <SectionHeader number="02" title="Senarai Aktiviti" />
+        <div className="border-l border-t border-[var(--grid-border)]">
+          <Collapsible open={openSections.aktiviti} onOpenChange={() => toggleSection('aktiviti')}>
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between p-4 border-r border-b border-[var(--grid-border)] bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                <div className="flex items-center gap-3">
+                  <ListChecks className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wide">Aktiviti</span>
+                  {completedAktiviti > 0 && (
+                    <span className="text-[10px] font-bold bg-primary text-white px-1.5 py-0.5">
+                      {completedAktiviti}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openSections.aktiviti ? 'rotate-180' : ''}`} />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="border-r border-b border-[var(--grid-border)] bg-white p-4 space-y-3">
+                {data.aktiviti.map((a, index) => (
+                  <div key={index} className="flex gap-3 items-start group">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center bg-primary/10 text-[10px] font-black text-primary">
+                      {index + 1}
+                    </div>
+                    <Textarea 
+                      value={a} 
+                      onChange={e => updateAktiviti(index, e.target.value)} 
+                      placeholder={`Aktiviti ${index + 1}...`}
+                      className="flex-1 text-sm min-h-[60px] resize-none border-slate-200 focus:border-primary"
+                      rows={2}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeAktiviti(index)}
+                      disabled={data.aktiviti.length <= 1}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+                <button 
+                  onClick={addAktiviti}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-slate-300 hover:border-primary hover:bg-blue-50/30 transition-all group"
+                >
+                  <Plus className="h-4 w-4 text-slate-400 group-hover:text-primary transition-colors" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-primary transition-colors">Tambah Aktiviti</span>
+                </button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      </section>
+
+      {/* Section 03: Gambar */}
+      <section>
+        <SectionHeader number="03" title="Gambar" />
+        <div className="border-l border-t border-r border-b border-[var(--grid-border)] bg-white">
+          <div className="p-4 border-b border-[var(--grid-border)] bg-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ImageIcon className="h-4 w-4 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-wide">Muat Naik Gambar</span>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <span className={`text-[10px] font-bold px-2 py-1 ${data.gambarBase64.length > 0 ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600'}`}>
+              {data.gambarBase64.length}/8
+            </span>
+          </div>
+          <div className="p-4 space-y-4">
+            <p className="text-xs text-slate-500 leading-relaxed">
+              <span className="text-amber-600 font-bold">Format:</span> JPG, PNG, WEBP, HEIC • Max 5MB
+            </p>
+
+            <div className="relative">
+              <Input
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/heic,image/heif"
+                multiple
+                onChange={e => {
+                  void handleImageUpload(e.target.files)
+                  e.target.value = ''
+                }}
+                className="text-sm file:text-xs file:mr-3 border-slate-200 focus:border-primary cursor-pointer"
+              />
+            </div>
+
+            {data.gambarBase64.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
+                {data.gambarBase64.map((img, index) => (
+                  <div key={index} className="relative overflow-hidden border border-[var(--grid-border)] bg-slate-50 aspect-square group">
+                    <img 
+                      src={img} 
+                      alt={`Gambar ${index + 1}`} 
+                      className="w-full h-full object-cover" 
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(index)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                    <span className="absolute bottom-1 left-1 text-[9px] text-white bg-black/50 px-1.5 py-0.5 font-bold">
+                      {index + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

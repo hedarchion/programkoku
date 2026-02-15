@@ -1,141 +1,48 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# MM Maker — Minit Mesyuarat & OPR Generator
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+A single-page, client-heavy Next.js 16 experience for Malaysian panitia teams to write meeting minutes and One Page Reports, upload supporting images/signatures, and publish finished documents without any server runtime. The entire UI + data workflow runs inside the browser, while document export relies on `docx`, `html-to-image`, and optional Puppeteer helpers.
 
-## ✨ Technology Stack
+## What it does
+- Provides a two-tab workflow for **Minit Mesyuarat** and **OPR** documentation with sticky top navigation, profile-aware settings, and downloadable Docx/PDF outputs.
+- Saves every organization profile and member list in `localStorage` through the `SettingsProvider` (`src/lib/settings-context.tsx`), so switching contexts stays instant even when the page reloads.
+- Lets you upload logos and signatures, drag in frequent phrases, and choose school metadata directly on the sheet drawer (all managed inside `src/components/settings-panel.tsx`).
+- Generates documents purely on the client: `src/lib/document-generator.ts` builds DOCX, uses `html-to-image` for PNG/OCR-friendly exports, and opens a `window.print()` flow for PDF.
 
-This scaffold provides a robust foundation built with:
+## Technology & architecture
+- **Next.js 16 + TypeScript** with the App Router and `output: "export"` (see `next.config.ts`), so `bun run build` emits a static `out/` folder and `bun start` serves it through the `python -m http.server` shim in `package.json`.
+- **Bun** as the package runner (`bun install`, `bun run dev`, etc.) and `tailwindcss@4` for styling; the global themes live in `src/app/globals.css` (tokens for `--grid-border`, `--focus-bg`, `section-badge`, etc.).
+- **SettingsProvider** orchestrates every profile, member, and frequent content item. The UI components (`settings-panel`, forms for mesyuarat and OPR) consume this provider to render the settings drawer without server data.
+- **Document generation** is client-side only: `generateMinitDocx`, `generateOprImage`, and `generateOprPdfClient` live in `src/lib/document-generator.ts`, imitating the older Puppeteer service but without server rendering.
+- **Optional PDF microservice** still exists in `mini-services/pdf-service/` for the Docker-powered Puppeteer pipeline described in `LOCAL_DEV.md`.
 
-### 🎯 Core Framework
-- **⚡ Next.js 16** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+## Responsive layout (mobile/tablet view)
+- `src/app/page.tsx` wraps everything in `<main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-32">`; the tab list, generation controls, and grid sections collapse with `grid grid-cols-1 lg:grid-cols-2` and `sm:grid-cols-2` classes so small screens stack naturally.
+- Settings panel cards rely on `grid grid-cols-1 md:grid-cols-2` or `sm:grid-cols-2 lg:grid-cols-4` patterns plus `divide` utilities, making each upload, member list, and template block stack on phones and spread horizontally on tablets/larger screens (`src/components/settings-panel.tsx`).
+- Global utilities in `src/app/globals.css` ensure consistent borders, section badges, and focused inputs across breakpoints, while `tailwind.config.ts` registers the shared token palette and leaves the default Tailwind breakpoints (`sm`, `md`, `lg`, etc.) in place for the responsive utilities already encoded in the JSX.
 
-### 🧩 UI Components & Styling
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
+## Local development
+1. `bun install`
+2. Copy `.env.local.example` to `.env.local` (used primarily by the Docker PDF service).
+3. **Recommended:** run `./scripts/start-local.sh` to fire up the Dockerized Puppeteer PDF generator (requires Docker); the helper waits for health checks on `http://localhost:3001` before launching `bun run dev` on port 3000.
+4. **Alternative:** start only the Next.js app with `bun run dev` when the PDF service is unavailable; document generation still works via the browser print dialog.
+5. Use `bun run lint` + `bun run build` before publishing.
 
-### 📋 Forms & Validation
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
+## Publishing
+- The default `next.config.ts` sets `output: "export"`, so `bun run build` produces static files under `out/`. You can serve that folder via `bun start` or push it to GitHub Pages/another static host.
+- For GitHub Pages, target the generated `out/` directory or a `gh-pages` branch (the `hosting.md` file outlines options). Static hosting is sufficient because every route (`/`, settings drawer, document outputs) is rendered client-side.
 
-### 🔄 State Management & Data Fetching
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Fetch** - Promise-based HTTP request
-
-### 🗄️ Database & Backend
-- **🗄️ Prisma** - Next-generation TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
-
-### 🎨 Advanced UI Features
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
-
-### 🌍 Internationalization & Utilities
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
-
-## 🎯 Why This Scaffold?
-
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
-
-## 🚀 Quick Start
-
-```bash
-# Install dependencies
-bun install
-
-# Start development server
-bun run dev
-
-# Build for production
-bun run build
-
-# Start production server
-bun start
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
-
-## 🤖 Powered by Z.ai
-
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
-
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance  
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
-
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
-
-## 📁 Project Structure
-
+## Project structure
 ```
 src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
+├── app/               # App Router entrypoint (`page.tsx`, `layout.tsx`) and global styles
+├── components/        # Forms (+ the settings drawer) and shared UI
+│   └── ui/            # shadcn-inspired primitives (tabs, sheet, dialog, buttons, inputs)
+├── hooks/             # Reusable React hooks
+├── lib/               # Settings context + document generation helpers
+└── mini-services/     # Optional Docker/Puppeteer PDF service (runs separately)
 ```
 
-## 🎨 Available Features & Components
-
-This scaffold includes a comprehensive set of modern web development tools:
-
-### 🧩 UI Components (shadcn/ui)
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
-
-### 📊 Advanced Data Features
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
-
-### 🎨 Interactive Features
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
-
-### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Fetch + TanStack Query
-- **State Management**: Simple and scalable with Zustand
-
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
-
-## 🤝 Get Started with Z.ai
-
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
-
----
-
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+## Tips & tooling
+- Profiles, members, logos, and template snippets are all stored in-browser; clearing the `document-generator-profiles` key resets the state.
+- The settings drawer follows the same grid-border, flat Tabs layout as the Mesyuarat/OPR workspace, so tweaks to `src/app/globals.css` (section badges, `grid-border-*` utilities) immediately affect both spaces.
+- Run `bun run dev` while inspecting in mobile or responsive devices mode in your browser to confirm the `Selectors`, `grid-cols-1 sm:grid-cols-2`, and `divide` utilities fall back gracefully on phones and orient horizontally on tablets.
