@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Trash2, Users, Copy } from 'lucide-react'
+import { Plus, Trash2, Users, Copy, Pencil } from 'lucide-react'
 import { useSettings } from '@/lib/settings-context'
 import { toast } from 'sonner'
 
@@ -64,6 +64,15 @@ interface MinitFormData {
     perkaraBerbangkit: boolean
     halHalLain: boolean
     ucapanPenangguhan: boolean
+  }
+  // Editable section titles
+  sectionTitles: {
+    ucapanPengerusi: string
+    ucapanPenasihat: string
+    minitLalu: string
+    perkaraBerbangkit: string
+    halHalLain: string
+    ucapanPenangguhan: string
   }
 }
 
@@ -159,6 +168,14 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
       perkaraBerbangkit: true,
       halHalLain: true,
       ucapanPenangguhan: true
+    },
+    sectionTitles: {
+      ucapanPengerusi: 'Ucapan Pengerusi / Ketua Panitia',
+      ucapanPenasihat: 'Ucapan Penasihat',
+      minitLalu: 'Membentangkan dan Mengesahkan Minit Mesyuarat Yang Lalu',
+      perkaraBerbangkit: 'Perkara Berbangkit',
+      halHalLain: 'Hal-hal Lain',
+      ucapanPenangguhan: 'Ucapan Penangguhan'
     }
   }))
   
@@ -347,6 +364,13 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
     toast.success('Kandungan kerap ditambah')
   }, [])
 
+  const updateSectionTitle = useCallback((key: keyof MinitFormData['sectionTitles'], value: string) => {
+    setData(prev => ({
+      ...prev,
+      sectionTitles: { ...prev.sectionTitles, [key]: value }
+    }))
+  }, [])
+
   // Calculate dynamic section numbers based on what's included
   const getSectionNumbers = useCallback(() => {
     let currentNum = 1
@@ -371,6 +395,69 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
 
   const sectionNums = getSectionNumbers()
   const ahliCount = data.ahli.filter(a => a.nama).length
+
+  // Editable section title component
+  const EditableTitle = ({ 
+    sectionNum, 
+    titleKey, 
+    value 
+  }: { 
+    sectionNum: number
+    titleKey: keyof MinitFormData['sectionTitles']
+    value: string 
+  }) => {
+    const [isEditing, setIsEditing] = useState(false)
+    const [editValue, setEditValue] = useState(value)
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+      if (isEditing && inputRef.current) {
+        inputRef.current.focus()
+        inputRef.current.select()
+      }
+    }, [isEditing])
+
+    const handleSave = () => {
+      if (editValue.trim()) {
+        updateSectionTitle(titleKey, editValue.trim())
+      }
+      setIsEditing(false)
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') handleSave()
+      if (e.key === 'Escape') {
+        setEditValue(value)
+        setIsEditing(false)
+      }
+    }
+
+    if (isEditing) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">{sectionNum}.</span>
+          <Input
+            ref={inputRef}
+            value={editValue}
+            onChange={e => setEditValue(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className="h-7 text-sm py-0 px-2 flex-1"
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div 
+        className="flex items-center gap-2 group cursor-pointer"
+        onClick={() => setIsEditing(true)}
+      >
+        <span className="text-sm">{sectionNum}. {value}</span>
+        <Pencil className="h-3 w-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -478,7 +565,9 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
       {data.sections.ucapanPengerusi && (
         <Card className="shadow-sm">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm">{sectionNums.ucapanPengerusi}. Ucapan Pengerusi</CardTitle>
+            <CardTitle className="text-sm">
+              <EditableTitle sectionNum={sectionNums.ucapanPengerusi} titleKey="ucapanPengerusi" value={data.sectionTitles.ucapanPengerusi} />
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {settings.frequentContent.filter(c => c.category === 'ucapanPengerusi').length > 0 && (
@@ -548,7 +637,9 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
       {data.sections.ucapanPenasihat && (
         <Card className="shadow-sm">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm">{sectionNums.ucapanPenasihat}. Ucapan Penasihat</CardTitle>
+            <CardTitle className="text-sm">
+              <EditableTitle sectionNum={sectionNums.ucapanPenasihat} titleKey="ucapanPenasihat" value={data.sectionTitles.ucapanPenasihat} />
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.ucapanPenasihat.map((u, index) => (
@@ -597,7 +688,9 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
       {data.sections.minitLalu && (
         <Card className="shadow-sm">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm">{sectionNums.minitLalu}. Minit Lalu</CardTitle>
+            <CardTitle className="text-sm">
+              <EditableTitle sectionNum={sectionNums.minitLalu} titleKey="minitLalu" value={data.sectionTitles.minitLalu} />
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {settings.frequentContent.filter(c => c.category === 'minitLalu').length > 0 && (
@@ -676,7 +769,9 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
       {data.sections.perkaraBerbangkit && (
         <Card className="shadow-sm">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm">{sectionNums.perkaraBerbangkit}. Perkara Berbangkit</CardTitle>
+            <CardTitle className="text-sm">
+              <EditableTitle sectionNum={sectionNums.perkaraBerbangkit} titleKey="perkaraBerbangkit" value={data.sectionTitles.perkaraBerbangkit} />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Textarea 
@@ -797,7 +892,9 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
       {data.sections.halHalLain && (
         <Card className="shadow-sm">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm">{sectionNums.halHalLain}. Hal-hal Lain</CardTitle>
+            <CardTitle className="text-sm">
+              <EditableTitle sectionNum={sectionNums.halHalLain} titleKey="halHalLain" value={data.sectionTitles.halHalLain} />
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.halHalLain.map((h, index) => (
@@ -846,7 +943,9 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
       {data.sections.ucapanPenangguhan && (
         <Card className="shadow-sm">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm">{sectionNums.ucapanPenangguhan}. Ucapan Penangguhan</CardTitle>
+            <CardTitle className="text-sm">
+              <EditableTitle sectionNum={sectionNums.ucapanPenangguhan} titleKey="ucapanPenangguhan" value={data.sectionTitles.ucapanPenangguhan} />
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {settings.frequentContent.filter(c => c.category === 'ucapanPenangguhan').length > 0 && (

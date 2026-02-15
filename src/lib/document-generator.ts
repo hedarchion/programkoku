@@ -95,6 +95,14 @@ interface MinitData {
     halHalLain: boolean
     ucapanPenangguhan: boolean
   }
+  sectionTitles?: {
+    ucapanPengerusi: string
+    ucapanPenasihat: string
+    minitLalu: string
+    perkaraBerbangkit: string
+    halHalLain: string
+    ucapanPenangguhan: string
+  }
   font?: 'calibri' | 'times'
   logo1Base64?: string
   logo2Base64?: string
@@ -204,20 +212,25 @@ export async function generateMinitDocx(data: MinitData): Promise<Blob> {
     children.push(new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 100 }, children: [new TextRun({ text: `Tindakan: ${tindakan}`, italics: true, size: BODY_SIZE, font: fontName })] }))
   }
 
+  // Helper to get section title
+  const getSectionTitle = (key: keyof NonNullable<MinitData['sectionTitles']>, defaultTitle: string): string => {
+    return data.sectionTitles?.[key]?.toUpperCase() || defaultTitle
+  }
+
   // 1. Ucapan Pengerusi
   if (data.sections.ucapanPengerusi) {
-    addSection(sectionNums.ucapanPengerusi, 'UCAPAN PENGERUSI / KETUA PANITIA', data.ucapanPengerusi, 'Makluman')
+    addSection(sectionNums.ucapanPengerusi, getSectionTitle('ucapanPengerusi', 'UCAPAN PENGERUSI / KETUA PANITIA'), data.ucapanPengerusi, 'Makluman')
   }
 
   // 2. Ucapan Penasihat
   if (data.sections.ucapanPenasihat) {
-    addSection(sectionNums.ucapanPenasihat, 'UCAPAN PENASIHAT', data.ucapanPenasihat, 'Makluman')
+    addSection(sectionNums.ucapanPenasihat, getSectionTitle('ucapanPenasihat', 'UCAPAN PENASIHAT'), data.ucapanPenasihat, 'Makluman')
   }
 
   // 3. Minit Lalu
   if (data.sections.minitLalu) {
     children.push(
-      new Paragraph({ spacing: { before: 200, after: 100 }, children: [new TextRun({ text: `${sectionNums.minitLalu}.  MEMBENTANGKAN DAN MENGESAHKAN MINIT MESYUARAT YANG LALU`, bold: true, size: SECTION_SIZE, font: fontName })] }),
+      new Paragraph({ spacing: { before: 200, after: 100 }, children: [new TextRun({ text: `${sectionNums.minitLalu}.  ${getSectionTitle('minitLalu', 'MEMBENTANGKAN DAN MENGESAHKAN MINIT MESYUARAT YANG LALU')}`, bold: true, size: SECTION_SIZE, font: fontName })] }),
       new Paragraph({ spacing: { after: 60 }, indent: { left: 360 }, children: [new TextRun({ text: `${sectionNums.minitLalu}.1  ${data.minitLalu.dibentang || 'Minit mesyuarat telah dibentangkan dan disahkan'}`, size: BODY_SIZE, font: fontName })] })
     )
     if (data.minitLalu.dicadangkan) children.push(new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 40 }, children: [new TextRun({ text: `Dicadangkan oleh: ${data.minitLalu.dicadangkan}`, italics: true, size: BODY_SIZE, font: fontName })] }))
@@ -227,7 +240,7 @@ export async function generateMinitDocx(data: MinitData): Promise<Blob> {
 
   // 4. Perkara Berbangkit
   if (data.sections.perkaraBerbangkit) {
-    addSection(sectionNums.perkaraBerbangkit, 'PERKARA BERBANGKIT', data.perkaraBerbangkit.slice(0, 1), 'Semua GBA')
+    addSection(sectionNums.perkaraBerbangkit, getSectionTitle('perkaraBerbangkit', 'PERKARA BERBANGKIT'), data.perkaraBerbangkit.slice(0, 1), 'Semua GBA')
   }
 
   // Agenda Items (with dynamic numbering)
@@ -245,12 +258,12 @@ export async function generateMinitDocx(data: MinitData): Promise<Blob> {
 
   // Hal-hal Lain
   if (data.sections.halHalLain) {
-    addSection(sectionNums.halHalLain, 'HAL-HAL LAIN', data.halHalLain, 'Semua GBA')
+    addSection(sectionNums.halHalLain, getSectionTitle('halHalLain', 'HAL-HAL LAIN'), data.halHalLain, 'Semua GBA')
   }
 
   // Ucapan Penangguhan
   if (data.sections.ucapanPenangguhan) {
-    children.push(new Paragraph({ spacing: { before: 200, after: 100 }, children: [new TextRun({ text: `${sectionNums.ucapanPenangguhan}.  UCAPAN PENANGGUHAN`, bold: true, size: SECTION_SIZE, font: fontName })] }))
+    children.push(new Paragraph({ spacing: { before: 200, after: 100 }, children: [new TextRun({ text: `${sectionNums.ucapanPenangguhan}.  ${getSectionTitle('ucapanPenangguhan', 'UCAPAN PENANGGUHAN')}`, bold: true, size: SECTION_SIZE, font: fontName })] }))
     data.ucapanPenangguhan.forEach((ucapan, index) => {
       if (ucapan) children.push(new Paragraph({ spacing: { after: 60 }, indent: { left: 360 }, children: [new TextRun({ text: `${sectionNums.ucapanPenangguhan}.${index + 1}  ${ucapan}`, size: BODY_SIZE, font: fontName })] }))
     })
@@ -495,13 +508,18 @@ export async function generateMinitPdf(data: MinitData): Promise<Blob> {
     y += 4
   }
 
+  // Helper to get section title for PDF
+  const getPdfSectionTitle = (key: keyof NonNullable<MinitData['sectionTitles']>, defaultTitle: string): string => {
+    return data.sectionTitles?.[key]?.toUpperCase() || defaultTitle
+  }
+
   // Sections
   if (data.sections.ucapanPengerusi) {
-    addSection(sectionNums.ucapanPengerusi, 'UCAPAN PENGERUSI / KETUA PANITIA', data.ucapanPengerusi, 'Makluman')
+    addSection(sectionNums.ucapanPengerusi, getPdfSectionTitle('ucapanPengerusi', 'UCAPAN PENGERUSI / KETUA PANITIA'), data.ucapanPengerusi, 'Makluman')
   }
   
   if (data.sections.ucapanPenasihat) {
-    addSection(sectionNums.ucapanPenasihat, 'UCAPAN PENASIHAT', data.ucapanPenasihat, 'Makluman')
+    addSection(sectionNums.ucapanPenasihat, getPdfSectionTitle('ucapanPenasihat', 'UCAPAN PENASIHAT'), data.ucapanPenasihat, 'Makluman')
   }
   
   if (data.sections.minitLalu) {
@@ -509,7 +527,7 @@ export async function generateMinitPdf(data: MinitData): Promise<Blob> {
     checkNewPage(20)
     doc.setFontSize(SECTION_SIZE)
     doc.setFont(fontFamily, 'bold')
-    doc.text(`${sectionNums.minitLalu}. MEMBENTANGKAN DAN MENGESAHKAN MINIT MESYUARAT YANG LALU`, margin, y)
+    doc.text(`${sectionNums.minitLalu}. ${getPdfSectionTitle('minitLalu', 'MEMBENTANGKAN DAN MENGESAHKAN MINIT MESYUARAT YANG LALU')}`, margin, y)
     y += 6
     doc.setFontSize(BODY_SIZE)
     doc.setFont(fontFamily, 'normal')
@@ -531,7 +549,7 @@ export async function generateMinitPdf(data: MinitData): Promise<Blob> {
   }
   
   if (data.sections.perkaraBerbangkit) {
-    addSection(sectionNums.perkaraBerbangkit, 'PERKARA BERBANGKIT', data.perkaraBerbangkit.slice(0, 1), 'Semua GBA')
+    addSection(sectionNums.perkaraBerbangkit, getPdfSectionTitle('perkaraBerbangkit', 'PERKARA BERBANGKIT'), data.perkaraBerbangkit.slice(0, 1), 'Semua GBA')
   }
   
   // Agenda Items
@@ -544,7 +562,7 @@ export async function generateMinitPdf(data: MinitData): Promise<Blob> {
   })
   
   if (data.sections.halHalLain) {
-    addSection(sectionNums.halHalLain, 'HAL-HAL LAIN', data.halHalLain, 'Semua GBA')
+    addSection(sectionNums.halHalLain, getPdfSectionTitle('halHalLain', 'HAL-HAL LAIN'), data.halHalLain, 'Semua GBA')
   }
   
   if (data.sections.ucapanPenangguhan) {
@@ -552,7 +570,7 @@ export async function generateMinitPdf(data: MinitData): Promise<Blob> {
     checkNewPage(15)
     doc.setFontSize(SECTION_SIZE)
     doc.setFont(fontFamily, 'bold')
-    doc.text(`${sectionNums.ucapanPenangguhan}. UCAPAN PENANGGUHAN`, margin, y)
+    doc.text(`${sectionNums.ucapanPenangguhan}. ${getPdfSectionTitle('ucapanPenangguhan', 'UCAPAN PENANGGUHAN')}`, margin, y)
     y += 6
     doc.setFontSize(BODY_SIZE)
     doc.setFont(fontFamily, 'normal')
