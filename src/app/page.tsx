@@ -240,19 +240,19 @@ function MainContent() {
       </header>
 
       <main className="flex-1 w-full">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-32">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-40 sm:pb-32">
           <Tabs defaultValue="minit" className="w-full">
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 bg-white border border-[var(--grid-border)] p-0 h-auto rounded-none">
               <TabsTrigger 
                 value="minit" 
-                className="relative flex items-center justify-center gap-2.5 text-xs py-4 px-4 rounded-none data-[state=active]:bg-primary data-[state=active]:text-white font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200 border-r border-[var(--grid-border)] data-[state=active]:border-primary"
+                className="relative flex items-center justify-center gap-2 text-xs py-3 sm:py-4 px-2 sm:px-4 rounded-none data-[state=active]:bg-primary data-[state=active]:text-white font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200 border-r border-[var(--grid-border)] data-[state=active]:border-primary"
               >
                 <ScrollText className="h-4 w-4 shrink-0" />
-                <span className="font-bold uppercase tracking-wide leading-none pt-0.5">Minit Mesyuarat</span>
+                <span className="font-bold uppercase tracking-wide leading-none pt-0.5">Minit</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="opr" 
-                className="relative flex items-center justify-center gap-2.5 text-xs py-4 px-4 rounded-none data-[state=active]:bg-primary data-[state=active]:text-white font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200"
+                className="relative flex items-center justify-center gap-2 text-xs py-3 sm:px-4 rounded-none data-[state=active]:bg-primary data-[state=active]:text-white font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200"
               >
                 <FileImage className="h-4 w-4 shrink-0" />
                 <span className="font-bold uppercase tracking-wide leading-none pt-0.5">OPR</span>
@@ -287,108 +287,117 @@ function MainContent() {
       </main>
 
       {/* Bottom Action Bar (Sticky) */}
-      <footer className="fixed bottom-0 w-full bg-white border-t-2 border-slate-800 px-4 sm:px-6 py-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            <span className="flex items-center gap-1.5">
+      <footer className="fixed bottom-0 w-full bg-white border-t-2 border-slate-800 px-4 sm:px-6 py-3 sm:py-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+        <div className="max-w-6xl mx-auto">
+          {/* Status Bar */}
+          <div className="flex items-center justify-between mb-3 sm:mb-0 sm:hidden">
+            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
               <span className="status-dot" />
               Auto-disimpan
             </span>
-            <span className="opacity-40 hidden sm:inline">Font: {settings.font === 'calibri' ? 'Calibri' : 'Times New Roman'}</span>
-          </div>
-          
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {/* Minit Generation Buttons */}
-            {minitGeneration.status !== 'idle' && (
-              <div className="flex items-center gap-2 mr-2">
-                {isMintGenerating && (
-                  <div className="flex items-center gap-2">
-                    <Progress value={minitGeneration.progress} className="w-20 h-1.5" />
-                    <span className="text-[10px] font-bold">{minitGeneration.progress}%</span>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <Button 
-              onClick={() => handleGenerateMinit('docx')}
-              disabled={isMintGenerating}
-              size="sm"
-              className="flex-1 sm:flex-none btn-primary"
-            >
-              {minitGeneration.status === 'generating' && minitGeneration.format === 'docx' ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : minitGeneration.status === 'success' && minitGeneration.format === 'docx' ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : (
-                <Download className="h-3.5 w-3.5" />
-              )}
-              <span>DOCX</span>
-            </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={() => handleGenerateMinit('pdf')}
-              disabled={isMintGenerating}
-              size="sm"
-              className="flex-1 sm:flex-none btn-dark disabled:opacity-60"
-            >
-              {minitGeneration.status === 'generating' && minitGeneration.format === 'pdf' ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : minitGeneration.status === 'success' && minitGeneration.format === 'pdf' ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : (
-                <FileCheck className="h-3.5 w-3.5" />
-              )}
-              <span>PDF Minit</span>
-            </Button>
-
-            <div className="h-6 w-[1px] bg-[var(--grid-border)] mx-1 hidden sm:block" />
-            
-            {/* OPR Generation Buttons */}
-            {oprGeneration.status !== 'idle' && (
+            {(isMintGenerating || isOprGenerating) && (
               <div className="flex items-center gap-2">
-                {isOprGenerating && (
-                  <div className="flex items-center gap-2">
-                    <Progress value={oprGeneration.progress} className="w-16 h-1.5" />
-                    <span className="text-[10px] font-bold">{oprGeneration.progress}%</span>
-                  </div>
-                )}
+                <Progress value={minitGeneration.progress || oprGeneration.progress} className="w-20 h-1.5" />
+                <span className="text-[10px] font-bold">{minitGeneration.progress || oprGeneration.progress}%</span>
               </div>
             )}
+          </div>
 
-            <Button 
-              onClick={() => handleGenerateOpr('pdf')}
-              disabled={isOprGenerating}
-              size="sm"
-              className="flex-1 sm:flex-none btn-secondary border-slate-800 text-slate-800 hover:bg-slate-100 disabled:opacity-60"
-            >
-              {oprGeneration.status === 'generating' && oprGeneration.format === 'pdf' ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : oprGeneration.status === 'success' && oprGeneration.format === 'pdf' ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : (
-                <FileCheck className="h-3.5 w-3.5" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+            {/* Left: Status */}
+            <div className="hidden sm:flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <span className="status-dot" />
+                Auto-disimpan
+              </span>
+            </div>
+            
+            {/* Right: Buttons Grid */}
+            <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              {/* Progress - Desktop */}
+              {(isMintGenerating || isOprGenerating) && (
+                <div className="hidden sm:flex items-center gap-2 mr-1">
+                  <Progress value={minitGeneration.progress || oprGeneration.progress} className="w-16 h-1.5" />
+                  <span className="text-[10px] font-bold">{minitGeneration.progress || oprGeneration.progress}%</span>
+                </div>
               )}
-              <span>PDF OPR</span>
-            </Button>
+              
+              {/* DOCX Button */}
+              <Button 
+                onClick={() => handleGenerateMinit('docx')}
+                disabled={isMintGenerating}
+                size="sm"
+                className="btn-primary h-10 sm:h-9"
+              >
+                {minitGeneration.status === 'generating' && minitGeneration.format === 'docx' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : minitGeneration.status === 'success' && minitGeneration.format === 'docx' ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span>DOCX</span>
+              </Button>
+              
+              {/* PDF Minit Button */}
+              <Button 
+                variant="outline"
+                onClick={() => handleGenerateMinit('pdf')}
+                disabled={isMintGenerating}
+                size="sm"
+                className="btn-dark h-10 sm:h-9 disabled:opacity-60"
+              >
+                {minitGeneration.status === 'generating' && minitGeneration.format === 'pdf' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : minitGeneration.status === 'success' && minitGeneration.format === 'pdf' ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  <FileCheck className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">PDF</span>
+                <span className="sm:hidden">PDF Minit</span>
+              </Button>
 
-            <Button 
-              variant="outline"
-              onClick={() => handleGenerateOpr('png')}
-              disabled={isOprGenerating}
-              size="sm"
-              className="flex-1 sm:flex-none btn-secondary border-primary text-primary hover:bg-blue-50 disabled:opacity-60"
-            >
-              {oprGeneration.status === 'generating' && oprGeneration.format === 'png' ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : oprGeneration.status === 'success' && oprGeneration.format === 'png' ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : (
-                <ImageIcon className="h-3.5 w-3.5" />
-              )}
-              <span>Gambar</span>
-            </Button>
+              {/* Divider - Desktop */}
+              <div className="hidden sm:block h-6 w-[1px] bg-[var(--grid-border)] mx-1" />
+              
+              {/* PDF OPR Button */}
+              <Button 
+                onClick={() => handleGenerateOpr('pdf')}
+                disabled={isOprGenerating}
+                size="sm"
+                className="btn-secondary border-slate-800 text-slate-800 hover:bg-slate-100 h-10 sm:h-9 disabled:opacity-60"
+              >
+                {oprGeneration.status === 'generating' && oprGeneration.format === 'pdf' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : oprGeneration.status === 'success' && oprGeneration.format === 'pdf' ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  <FileCheck className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">OPR</span>
+                <span className="sm:hidden">PDF OPR</span>
+              </Button>
+
+              {/* PNG Button */}
+              <Button 
+                variant="outline"
+                onClick={() => handleGenerateOpr('png')}
+                disabled={isOprGenerating}
+                size="sm"
+                className="btn-secondary border-primary text-primary hover:bg-blue-50 h-10 sm:h-9 disabled:opacity-60"
+              >
+                {oprGeneration.status === 'generating' && oprGeneration.format === 'png' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : oprGeneration.status === 'success' && oprGeneration.format === 'png' ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  <ImageIcon className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">IMG</span>
+                <span className="sm:hidden">Gambar</span>
+              </Button>
+            </div>
           </div>
         </div>
       </footer>

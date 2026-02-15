@@ -5,9 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 
 const localFontVars: CSSProperties = {
   ["--font-geist-sans" as string]:
-    "ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+    "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   ["--font-geist-mono" as string]:
-    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+    "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 };
 
 export const metadata: Metadata = {
@@ -41,7 +41,7 @@ export default function RootLayout({
       <head>
         <link 
           rel="stylesheet" 
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
         />
       </head>
       <body style={localFontVars} className="antialiased bg-background text-foreground">
