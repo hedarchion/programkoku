@@ -7,18 +7,41 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Settings, Plus, Trash2, Upload, X, Image as ImageIcon } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Settings, Plus, Trash2, Upload, X, Building2, Users, RotateCcw, Check, Copy, Signature } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog'
+
+// Section Header Component
+const SectionHeader = ({ number, title }: { number: string; title: string }) => (
+  <div className="flex items-center gap-2 mb-4">
+    <span className="section-badge">{number}</span>
+    <h2 className="text-sm font-bold uppercase tracking-widest text-slate-800">{title}</h2>
+  </div>
+)
 
 export default function SettingsDialog() {
   const { 
     settings, 
+    currentProfile,
+    profiles,
+    createProfile,
+    updateProfile,
+    deleteProfile,
+    duplicateProfile,
+    switchProfile,
     updateSettings, 
     addMember, 
     updateMember, 
@@ -26,7 +49,7 @@ export default function SettingsDialog() {
     addFrequentContent,
     updateFrequentContent,
     removeFrequentContent,
-    resetSettings 
+    resetCurrentProfile 
   } = useSettings()
   
   const [open, setOpen] = useState(false)
@@ -34,13 +57,19 @@ export default function SettingsDialog() {
   const [newFrequent, setNewFrequent] = useState<FrequentContent>({
     id: '', name: '', category: 'ucapanPengerusi', content: ''
   })
+  const [editingMember, setEditingMember] = useState<Member | null>(null)
+  const [editingFrequent, setEditingFrequent] = useState<FrequentContent | null>(null)
+  const [newProfileName, setNewProfileName] = useState('')
+  const [newProfileType, setNewProfileType] = useState<'school' | 'society'>('society')
+  const [duplicateName, setDuplicateName] = useState('')
+  const [activeTab, setActiveTab] = useState('profiles')
   
   const logo1Ref = useRef<HTMLInputElement>(null)
   const logo2Ref = useRef<HTMLInputElement>(null)
   const ttdSetiausahaRef = useRef<HTMLInputElement>(null)
   const ttdKetuaPanitiaRef = useRef<HTMLInputElement>(null)
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'logo1' | 'logo2' | 'ttdSetiausaha' | 'ttdKetuaPanitia') => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'logo1' | 'logo2' | 'setiausahaSignature' | 'ketuaPanitiaSignature') => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 500000) {
@@ -50,6 +79,7 @@ export default function SettingsDialog() {
       const reader = new FileReader()
       reader.onload = (event) => {
         updateSettings({ [field]: event.target?.result as string })
+        toast.success('Imej berjaya dimuat naik')
       }
       reader.readAsDataURL(file)
     }
@@ -75,6 +105,28 @@ export default function SettingsDialog() {
     toast.success('Kandungan kerap ditambah')
   }
 
+  const handleCreateProfile = () => {
+    if (!newProfileName.trim()) {
+      toast.error('Sila masukkan nama profil')
+      return
+    }
+    createProfile(newProfileName.trim(), newProfileType)
+    setNewProfileName('')
+    toast.success('Profil baru berjaya dibuat')
+  }
+
+  const handleDuplicateProfile = () => {
+    if (!duplicateName.trim()) {
+      toast.error('Sila masukkan nama profil')
+      return
+    }
+    if (currentProfile) {
+      duplicateProfile(currentProfile.id, duplicateName.trim())
+      setDuplicateName('')
+      toast.success('Profil berjaya disalin')
+    }
+  }
+
   const jawatanList = [
     'PK HEM', 'PK Pentadbiran', 'PK Kokurikulum', 'PK Kurikulum',
     'Ketua Panitia', 'Setiausaha Panitia', 'Bendahari Panitia', 'Ahli Panitia',
@@ -87,139 +139,355 @@ export default function SettingsDialog() {
     ucapanPenangguhan: 'Ucapan Penangguhan'
   }
 
+  const categoryOptions = [
+    { value: 'ucapanPengerusi', label: 'Ucapan Pengerusi' },
+    { value: 'minitLalu', label: 'Minit Lalu (3.1)' },
+    { value: 'ucapanPenangguhan', label: 'Ucapan Penangguhan' }
+  ]
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <Settings className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-        </Button>
+        <button className="text-slate-400 hover:text-slate-700 transition-colors">
+          <Settings className="h-5 w-5" />
+        </button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Tetapan</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 gap-0 border border-[var(--grid-border)] rounded-none">
+        <DialogHeader className="p-4 border-b border-[var(--grid-border)] bg-slate-50">
+          <DialogTitle className="text-sm font-bold uppercase tracking-wide flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Tetapan
+          </DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="school" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="school">Sekolah</TabsTrigger>
-            <TabsTrigger value="members">Ahli</TabsTrigger>
-            <TabsTrigger value="logos">Logo & TTD</TabsTrigger>
-            <TabsTrigger value="frequent">Kerap</TabsTrigger>
-            <TabsTrigger value="font">Font</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5 h-auto bg-white border-b border-[var(--grid-border)] rounded-none p-0">
+            <TabsTrigger 
+              value="profiles" 
+              className="text-[10px] font-bold uppercase tracking-wider py-3 rounded-none border-r border-[var(--grid-border)] last:border-r-0 text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary"
+            >
+              Profil
+            </TabsTrigger>
+            <TabsTrigger 
+              value="school"
+              className="text-[10px] font-bold uppercase tracking-wider py-3 rounded-none border-r border-[var(--grid-border)] last:border-r-0 text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary"
+            >
+              Sekolah
+            </TabsTrigger>
+            <TabsTrigger 
+              value="members"
+              className="text-[10px] font-bold uppercase tracking-wider py-3 rounded-none border-r border-[var(--grid-border)] last:border-r-0 text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary"
+            >
+              Ahli
+            </TabsTrigger>
+            <TabsTrigger 
+              value="logos"
+              className="text-[10px] font-bold uppercase tracking-wider py-3 rounded-none border-r border-[var(--grid-border)] last:border-r-0 text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary"
+            >
+              Logo & TTD
+            </TabsTrigger>
+            <TabsTrigger 
+              value="frequent"
+              className="text-[10px] font-bold uppercase tracking-wider py-3 rounded-none border-r border-[var(--grid-border)] last:border-r-0 text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary"
+            >
+              Templat
+            </TabsTrigger>
           </TabsList>
           
-          <ScrollArea className="h-[60vh] mt-4">
-            {/* School Settings */}
-            <TabsContent value="school" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Maklumat Sekolah</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <div className="space-y-2">
-                    <Label>Nama Sekolah</Label>
-                    <Input 
-                      value={settings.namaSekolah} 
-                      onChange={e => updateSettings({ namaSekolah: e.target.value })}
-                      placeholder="SEKOLAH KEBANGSAAN AYER TAWAR"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Alamat</Label>
-                    <Input 
-                      value={settings.alamatSekolah} 
-                      onChange={e => updateSettings({ alamatSekolah: e.target.value })}
-                      placeholder="32400 AYER TAWAR, PERAK"
-                    />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label>Kod Sekolah</Label>
-                      <Input 
-                        value={settings.kodSekolah} 
-                        onChange={e => updateSettings({ kodSekolah: e.target.value })}
-                        placeholder="ABA 1006"
+          <div className="h-[60vh] overflow-y-auto p-6">
+            {/* Profiles Tab */}
+            <TabsContent value="profiles" className="space-y-6 mt-0">
+              <section>
+                <SectionHeader number="01" title="Profil Organisasi" />
+                <div className="border-l border-t border-r border-[var(--grid-border)]">
+                  <div className="p-4 border-b border-[var(--grid-border)] bg-slate-50 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wide">Senarai Profil ({profiles.length})</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={newProfileName}
+                        onChange={e => setNewProfileName(e.target.value)}
+                        placeholder="Nama profil baru"
+                        className="h-8 text-xs w-48 border-slate-200 rounded-none"
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Telefon/Faks</Label>
-                      <Input 
-                        value={settings.telefon} 
-                        onChange={e => updateSettings({ telefon: e.target.value })}
-                        placeholder="05-6724248"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input 
-                        value={settings.email} 
-                        onChange={e => updateSettings({ email: e.target.value })}
-                        placeholder="ABA1006@moe.edu.my"
-                      />
+                      <Select 
+                        value={newProfileType}
+                        onValueChange={(v: 'school' | 'society') => setNewProfileType(v)}
+                      >
+                        <SelectTrigger className="h-8 text-xs w-36 rounded-none border-slate-200">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="society">
+                            <div className="flex items-center gap-2 text-xs">
+                              <Users className="h-3 w-3" />
+                              <span>Panitia</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="school">
+                            <div className="flex items-center gap-2 text-xs">
+                              <Building2 className="h-3 w-3" />
+                              <span>Sekolah</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        size="sm" 
+                        onClick={handleCreateProfile}
+                        className="btn-primary h-8"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span className="text-[10px]">Baru</span>
+                      </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            {/* Members Settings */}
-            <TabsContent value="members" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Senarai Ahli Panitia</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-2">
-                    {settings.members.map((member) => (
-                      <div key={member.id} className="flex items-center gap-2 p-2 rounded-lg border bg-slate-50 dark:bg-slate-900">
-                        <div className="flex-1 grid gap-2 sm:grid-cols-2">
-                          <Input 
-                            value={member.nama} 
-                            onChange={e => updateMember(member.id, { nama: e.target.value })}
-                            placeholder="Nama"
-                            className="bg-white dark:bg-slate-800"
-                          />
-                          <Select 
-                            value={member.jawatan} 
-                            onValueChange={v => updateMember(member.id, { jawatan: v })}
-                          >
-                            <SelectTrigger className="bg-white dark:bg-slate-800">
-                              <SelectValue placeholder="Jawatan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {jawatanList.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
+                  <div className="max-h-[40vh] overflow-y-auto bg-white">
+                    {profiles.map(profile => (
+                      <div 
+                        key={profile.id} 
+                        className={`flex items-center justify-between p-3 border-b border-[var(--grid-border)] transition-colors ${
+                          profile.id === currentProfile?.id 
+                            ? 'bg-primary/10' 
+                            : 'bg-white hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {profile.type === 'school' ? (
+                            <Building2 className="h-4 w-4 shrink-0 text-primary" />
+                          ) : (
+                            <Users className="h-4 w-4 shrink-0 text-slate-600" />
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">{profile.name}</div>
+                            <div className="text-[10px] text-slate-500">
+                              {profile.type === 'school' ? 'Sekolah' : 'Persatuan/Panitia'}
+                              {' • '}{profile.settings.members.length} ahli
+                            </div>
+                          </div>
+                          {profile.id === currentProfile?.id && (
+                            <Badge className="bg-primary text-[10px] px-1.5 py-0 shrink-0 rounded-none">
+                              Aktif
+                            </Badge>
+                          )}
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => removeMember(member.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          {profile.id !== currentProfile?.id && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-7 gap-1.5 text-xs font-medium hover:bg-primary/10 hover:text-primary transition-colors rounded-none"
+                              onClick={() => switchProfile(profile.id)}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                              <span>Pilih</span>
+                            </Button>
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-7 w-7 rounded-none"
+                                onClick={() => setDuplicateName(`${profile.name} (Salinan)`)}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-none border border-[var(--grid-border)] p-0">
+                              <AlertDialogHeader className="p-4 border-b border-[var(--grid-border)]">
+                                <AlertDialogTitle className="text-sm font-bold uppercase tracking-wide">Salin Profil</AlertDialogTitle>
+                                <AlertDialogDescription className="text-xs pt-2">
+                                  Salin profil &quot;{profile.name}&quot; dengan tetapan baharu.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <div className="p-4 space-y-3">
+                                <div className="space-y-2">
+                                  <Label className="text-[10px] font-bold uppercase opacity-50">Nama Profil Baru</Label>
+                                  <Input 
+                                    value={duplicateName}
+                                    onChange={e => setDuplicateName(e.target.value)}
+                                    className="h-9 text-sm border-slate-200 focus:border-primary rounded-none"
+                                  />
+                                </div>
+                              </div>
+                              <AlertDialogFooter className="p-4 border-t border-[var(--grid-border)]">
+                                <AlertDialogCancel className="rounded-none text-[10px] font-bold uppercase tracking-wide">Batal</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  className="btn-primary text-[10px]"
+                                  onClick={handleDuplicateProfile}
+                                >
+                                  Salin
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          {profiles.length > 1 && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none">
+                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="rounded-none border border-[var(--grid-border)] p-0">
+                                <AlertDialogHeader className="p-4 border-b border-[var(--grid-border)]">
+                                  <AlertDialogTitle className="text-sm font-bold uppercase tracking-wide">Padam profil?</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-xs pt-2">
+                                    Profil &quot;{profile.name}&quot; akan dipadamkan secara kekal.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="p-4 border-t border-[var(--grid-border)]">
+                                  <AlertDialogCancel className="rounded-none text-[10px] font-bold uppercase tracking-wide">Batal</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    className="bg-red-500 hover:bg-red-600 rounded-none text-[10px] font-bold uppercase tracking-wide"
+                                    onClick={() => {
+                                      deleteProfile(profile.id)
+                                      toast.success('Profil berjaya dipadam')
+                                    }}
+                                  >
+                                    Padam
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                  
-                  <Separator />
-                  
-                  <div className="grid gap-2 sm:grid-cols-3">
+                </div>
+              </section>
+
+              <section>
+                <SectionHeader number="02" title="Tetapan Profil Semasa" />
+                <div className="border-l border-t border-r border-[var(--grid-border)] bg-white p-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase opacity-50">Nama Profil</Label>
                     <Input 
+                      value={currentProfile?.name || ''}
+                      onChange={e => {
+                        if (currentProfile) {
+                          updateProfile(currentProfile.id, { name: e.target.value })
+                        }
+                      }}
+                      className="h-9 text-sm border-slate-200 focus:border-primary rounded-none"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-[var(--grid-border)]">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="flex items-center gap-2 text-[10px] font-bold uppercase text-red-600 hover:text-red-700 transition-colors">
+                          <RotateCcw className="h-3 w-3" />
+                          Set Semula Profil
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-none border border-[var(--grid-border)] p-0">
+                        <AlertDialogHeader className="p-4 border-b border-[var(--grid-border)]">
+                          <AlertDialogTitle className="text-sm font-bold uppercase tracking-wide">Set Semula Profil?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs pt-2">
+                            Semua tetapan dalam profil ini akan dikembalikan kepada nilai lalai.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="p-4 border-t border-[var(--grid-border)]">
+                          <AlertDialogCancel className="rounded-none text-[10px] font-bold uppercase tracking-wide">Batal</AlertDialogCancel>
+                          <AlertDialogAction className="bg-red-500 hover:bg-red-600 rounded-none text-[10px] font-bold uppercase tracking-wide" onClick={resetCurrentProfile}>Set Semula</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </section>
+            </TabsContent>
+            
+            {/* School Settings */}
+            <TabsContent value="school" className="space-y-6 mt-0">
+              <section>
+                <SectionHeader number="01" title="Maklumat Sekolah" />
+                <div className="grid grid-cols-1 md:grid-cols-2 border-l border-t border-[var(--grid-border)]">
+                  <div className="p-4 border-r border-b border-[var(--grid-border)] bg-white md:col-span-2">
+                    <Label className="text-[10px] font-bold uppercase opacity-50 mb-2 block">Nama Sekolah</Label>
+                    <Input 
+                      value={settings.schoolName} 
+                      onChange={e => updateSettings({ schoolName: e.target.value })}
+                      placeholder="SEKOLAH KEBANGSAAN AYER TAWAR"
+                      className="h-9 text-sm border-slate-200 focus:border-primary rounded-none"
+                    />
+                  </div>
+                  <div className="p-4 border-r border-b border-[var(--grid-border)] bg-white">
+                    <Label className="text-[10px] font-bold uppercase opacity-50 mb-2 block">Kod Sekolah</Label>
+                    <Input 
+                      value={settings.schoolCode} 
+                      onChange={e => updateSettings({ schoolCode: e.target.value })}
+                      placeholder="ABA 1006"
+                      className="h-9 text-sm border-slate-200 focus:border-primary rounded-none"
+                    />
+                  </div>
+                  <div className="p-4 border-r border-b border-[var(--grid-border)] bg-white">
+                    <Label className="text-[10px] font-bold uppercase opacity-50 mb-2 block">Font</Label>
+                    <Select 
+                      value={settings.font} 
+                      onValueChange={(v: 'calibri' | 'times' | 'poppins') => updateSettings({ font: v })}
+                    >
+                      <SelectTrigger className="h-9 rounded-none border-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="calibri">Calibri</SelectItem>
+                        <SelectItem value="times">Times New Roman</SelectItem>
+                        <SelectItem value="poppins">Poppins</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="p-4 border-r border-b border-[var(--grid-border)] bg-white md:col-span-2">
+                    <Label className="text-[10px] font-bold uppercase opacity-50 mb-2 block">Alamat</Label>
+                    <Input 
+                      value={settings.schoolAddress} 
+                      onChange={e => updateSettings({ schoolAddress: e.target.value })}
+                      placeholder="32400 AYER TAWAR, PERAK"
+                      className="h-9 text-sm border-slate-200 focus:border-primary rounded-none"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <SectionHeader number="02" title="Pengguna Semasa" />
+                <div className="border-l border-t border-r border-[var(--grid-border)] bg-white p-4">
+                  <Label className="text-[10px] font-bold uppercase opacity-50 mb-2 block">Pilih Ahli (Setiausaha)</Label>
+                  <Select 
+                    value={settings.userMemberId || ''} 
+                    onValueChange={v => updateSettings({ userMemberId: v })}
+                  >
+                    <SelectTrigger className="h-9 rounded-none border-slate-200">
+                      <SelectValue placeholder="Pilih ahli" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {settings.members.map(m => (
+                        <SelectItem key={m.id} value={m.id}>{m.nama} ({m.jawatan})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </section>
+            </TabsContent>
+            
+            {/* Members Settings */}
+            <TabsContent value="members" className="space-y-6 mt-0">
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <SectionHeader number="01" title="Senarai Ahli" />
+                  <div className="flex items-center gap-2">
+                    <Input
                       value={newMember.nama}
                       onChange={e => setNewMember(prev => ({ ...prev, nama: e.target.value }))}
-                      placeholder="Nama ahli baru"
+                      placeholder="Nama ahli"
+                      className="h-8 text-xs w-40 border-slate-200 rounded-none"
                     />
                     <Select 
                       value={newMember.jawatan}
                       onValueChange={v => setNewMember(prev => ({ ...prev, jawatan: v }))}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih jawatan" />
+                      <SelectTrigger className="h-8 text-xs w-32 rounded-none border-slate-200">
+                        <SelectValue placeholder="Jawatan" />
                       </SelectTrigger>
                       <SelectContent>
                         {jawatanList.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
@@ -227,302 +495,337 @@ export default function SettingsDialog() {
                     </Select>
                     <Button 
                       onClick={handleAddMember}
-                      className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white transition-all duration-200"
+                      className="btn-primary h-8"
+                      size="sm"
                     >
-                      <Plus className="h-4 w-4" />
-                      <span>Tambah</span>
+                      <Plus className="h-3 w-3" />
+                      <span className="text-[10px]">Tambah</span>
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Penetapan Jawatan</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Setiausaha Panitia</Label>
-                    <Select 
-                      value={settings.setiausahaId || ''} 
-                      onValueChange={v => updateSettings({ setiausahaId: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih setiausaha" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {settings.members.map(m => (
-                          <SelectItem key={m.id} value={m.id}>{m.nama}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                </div>
+                <div className="border-l border-t border-r border-[var(--grid-border)]">
+                  <div className="max-h-[50vh] overflow-y-auto bg-white">
+                    {settings.members.map((member) => (
+                      <div 
+                        key={member.id} 
+                        className="flex items-center justify-between p-3 border-b border-[var(--grid-border)] bg-white hover:bg-primary/5 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0 mr-2">
+                          <div className="font-medium text-sm truncate">{member.nama}</div>
+                          <div className="text-xs text-slate-500 truncate">{member.jawatan}</div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {member.id === settings.userMemberId && (
+                            <Badge className="bg-primary text-[10px] px-1.5 py-0 rounded-none">Anda</Badge>
+                          )}
+                          {member.jawatan.toLowerCase().includes('ketua panitia') && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-none bg-slate-200 text-slate-700">Penyemak</Badge>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-7 w-7 rounded-none"
+                            onClick={() => {
+                              if (editingMember?.id === member.id) {
+                                updateMember(member.id, editingMember)
+                                setEditingMember(null)
+                                toast.success('Ahli berjaya dikemaskini')
+                              } else {
+                                setEditingMember(member)
+                              }
+                            }}
+                          >
+                            {editingMember?.id === member.id ? (
+                              <Check className="h-3 w-3 text-primary" />
+                            ) : (
+                              <span className="text-[10px] font-medium">Edit</span>
+                            )}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-7 w-7 rounded-none"
+                            onClick={() => {
+                              removeMember(member.id)
+                              toast.success('Ahli berjaya dipadam')
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="space-y-2">
-                    <Label>Ketua Panitia</Label>
-                    <Select 
-                      value={settings.ketuaPanitiaId || ''} 
-                      onValueChange={v => updateSettings({ ketuaPanitiaId: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih ketua panitia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {settings.members.map(m => (
-                          <SelectItem key={m.id} value={m.id}>{m.nama}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </section>
             </TabsContent>
             
             {/* Logos & Signatures */}
-            <TabsContent value="logos" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Logo Sekolah</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Logo 1 (Kiri)</Label>
-                    <div className="flex items-center gap-2">
-                      {settings.logo1 && (
-                        <img src={settings.logo1} alt="Logo 1" className="h-16 w-16 object-contain rounded border" />
-                      )}
-                      <input 
-                        ref={logo1Ref}
-                        type="file" 
-                        accept="image/png,image/jpeg,image/jpg"
-                        className="hidden"
-                        onChange={e => handleImageUpload(e, 'logo1')}
-                      />
-                      <Button variant="outline" onClick={() => logo1Ref.current?.click()}>
-                        <Upload className="h-4 w-4 mr-2" /> Muat Naik
-                      </Button>
-                      {settings.logo1 && (
-                        <Button variant="ghost" size="icon" onClick={() => updateSettings({ logo1: null })}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
+            <TabsContent value="logos" className="space-y-6 mt-0">
+              <section>
+                <SectionHeader number="01" title="Logo Sekolah" />
+                <div className="border-l border-t border-r border-[var(--grid-border)] bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--grid-border)]">
+                    <div className="p-4 space-y-3">
+                      <Label className="text-[10px] font-bold uppercase opacity-50 block">Logo 1 (Kiri)</Label>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 border border-[var(--grid-border)] bg-slate-50 flex items-center justify-center overflow-hidden">
+                          {settings.logo1 ? (
+                            <img src={settings.logo1} alt="Logo 1" className="h-10 w-10 object-contain" />
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-300 text-xl">image</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="file"
+                            ref={logo1Ref}
+                            accept="image/png,image/jpeg"
+                            className="hidden"
+                            onChange={e => handleImageUpload(e, 'logo1')}
+                          />
+                          <button 
+                            onClick={() => logo1Ref.current?.click()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-primary hover:bg-primary/10 transition-colors text-[10px] font-bold uppercase tracking-wide"
+                          >
+                            <Upload className="h-3 w-3" />
+                            Muat Naik
+                          </button>
+                          {settings.logo1 && (
+                            <button 
+                              className="flex items-center justify-center h-7 w-7 border border-slate-200 hover:border-red-300 hover:bg-red-50 transition-colors"
+                              onClick={() => updateSettings({ logo1: null })}
+                            >
+                              <X className="h-3 w-3 text-red-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <Label className="text-[10px] font-bold uppercase opacity-50 block">Logo 2 (Kanan)</Label>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 border border-[var(--grid-border)] bg-slate-50 flex items-center justify-center overflow-hidden">
+                          {settings.logo2 ? (
+                            <img src={settings.logo2} alt="Logo 2" className="h-10 w-10 object-contain" />
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-300 text-xl">image</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="file"
+                            ref={logo2Ref}
+                            accept="image/png,image/jpeg"
+                            className="hidden"
+                            onChange={e => handleImageUpload(e, 'logo2')}
+                          />
+                          <button 
+                            onClick={() => logo2Ref.current?.click()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-primary hover:bg-primary/10 transition-colors text-[10px] font-bold uppercase tracking-wide"
+                          >
+                            <Upload className="h-3 w-3" />
+                            Muat Naik
+                          </button>
+                          {settings.logo2 && (
+                            <button 
+                              className="flex items-center justify-center h-7 w-7 border border-slate-200 hover:border-red-300 hover:bg-red-50 transition-colors"
+                              onClick={() => updateSettings({ logo2: null })}
+                            >
+                              <X className="h-3 w-3 text-red-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Logo 2 (Kanan)</Label>
-                    <div className="flex items-center gap-2">
-                      {settings.logo2 && (
-                        <img src={settings.logo2} alt="Logo 2" className="h-16 w-16 object-contain rounded border" />
-                      )}
-                      <input 
-                        ref={logo2Ref}
-                        type="file" 
-                        accept="image/png,image/jpeg,image/jpg"
-                        className="hidden"
-                        onChange={e => handleImageUpload(e, 'logo2')}
-                      />
-                      <Button variant="outline" onClick={() => logo2Ref.current?.click()}>
-                        <Upload className="h-4 w-4 mr-2" /> Muat Naik
-                      </Button>
-                      {settings.logo2 && (
-                        <Button variant="ghost" size="icon" onClick={() => updateSettings({ logo2: null })}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </section>
               
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Tandatangan</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>TTD Setiausaha</Label>
-                    <div className="flex items-center gap-2">
-                      {settings.ttdSetiausaha && (
-                        <img src={settings.ttdSetiausaha} alt="TTD Setiausaha" className="h-12 object-contain rounded border" />
-                      )}
-                      <input 
-                        ref={ttdSetiausahaRef}
-                        type="file" 
-                        accept="image/png,image/jpeg,image/jpg"
-                        className="hidden"
-                        onChange={e => handleImageUpload(e, 'ttdSetiausaha')}
-                      />
-                      <Button variant="outline" onClick={() => ttdSetiausahaRef.current?.click()}>
-                        <Upload className="h-4 w-4 mr-2" /> Muat Naik
-                      </Button>
-                      {settings.ttdSetiausaha && (
-                        <Button variant="ghost" size="icon" onClick={() => updateSettings({ ttdSetiausaha: null })}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
+              <section>
+                <SectionHeader number="02" title="Tandatangan" />
+                <div className="border-l border-t border-r border-[var(--grid-border)] bg-white">
+                  <div className="p-3 bg-slate-50 border-b border-[var(--grid-border)]">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wide">PNG/JPG dengan latar putih</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--grid-border)]">
+                    <div className="p-4 space-y-3">
+                      <Label className="text-[10px] font-bold uppercase opacity-50 block">Setiausaha</Label>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-24 border border-[var(--grid-border)] bg-slate-50 flex items-center justify-center overflow-hidden">
+                          {settings.setiausahaSignature ? (
+                            <img src={settings.setiausahaSignature} alt="Sig" className="h-10 object-contain" />
+                          ) : (
+                            <Signature className="h-5 w-5 text-slate-300" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="file"
+                            ref={ttdSetiausahaRef}
+                            accept="image/png,image/jpeg"
+                            className="hidden"
+                            onChange={e => handleImageUpload(e, 'setiausahaSignature')}
+                          />
+                          <button 
+                            onClick={() => ttdSetiausahaRef.current?.click()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-primary hover:bg-primary/10 transition-colors text-[10px] font-bold uppercase tracking-wide"
+                          >
+                            <Upload className="h-3 w-3" />
+                            Muat Naik
+                          </button>
+                          {settings.setiausahaSignature && (
+                            <button 
+                              className="flex items-center justify-center h-7 w-7 border border-slate-200 hover:border-red-300 hover:bg-red-50 transition-colors"
+                              onClick={() => updateSettings({ setiausahaSignature: null })}
+                            >
+                              <X className="h-3 w-3 text-red-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <Label className="text-[10px] font-bold uppercase opacity-50 block">Ketua Panitia</Label>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-24 border border-[var(--grid-border)] bg-slate-50 flex items-center justify-center overflow-hidden">
+                          {settings.ketuaPanitiaSignature ? (
+                            <img src={settings.ketuaPanitiaSignature} alt="Sig" className="h-10 object-contain" />
+                          ) : (
+                            <Signature className="h-5 w-5 text-slate-300" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="file"
+                            ref={ttdKetuaPanitiaRef}
+                            accept="image/png,image/jpeg"
+                            className="hidden"
+                            onChange={e => handleImageUpload(e, 'ketuaPanitiaSignature')}
+                          />
+                          <button 
+                            onClick={() => ttdKetuaPanitiaRef.current?.click()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-primary hover:bg-primary/10 transition-colors text-[10px] font-bold uppercase tracking-wide"
+                          >
+                            <Upload className="h-3 w-3" />
+                            Muat Naik
+                          </button>
+                          {settings.ketuaPanitiaSignature && (
+                            <button 
+                              className="flex items-center justify-center h-7 w-7 border border-slate-200 hover:border-red-300 hover:bg-red-50 transition-colors"
+                              onClick={() => updateSettings({ ketuaPanitiaSignature: null })}
+                            >
+                              <X className="h-3 w-3 text-red-500" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>TTD Ketua Panitia</Label>
-                    <div className="flex items-center gap-2">
-                      {settings.ttdKetuaPanitia && (
-                        <img src={settings.ttdKetuaPanitia} alt="TTD Ketua Panitia" className="h-12 object-contain rounded border" />
-                      )}
-                      <input 
-                        ref={ttdKetuaPanitiaRef}
-                        type="file" 
-                        accept="image/png,image/jpeg,image/jpg"
-                        className="hidden"
-                        onChange={e => handleImageUpload(e, 'ttdKetuaPanitia')}
-                      />
-                      <Button variant="outline" onClick={() => ttdKetuaPanitiaRef.current?.click()}>
-                        <Upload className="h-4 w-4 mr-2" /> Muat Naik
-                      </Button>
-                      {settings.ttdKetuaPanitia && (
-                        <Button variant="ghost" size="icon" onClick={() => updateSettings({ ttdKetuaPanitia: null })}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </section>
             </TabsContent>
             
             {/* Frequent Content */}
-            <TabsContent value="frequent" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Kandungan Kerap</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {['ucapanPengerusi', 'minitLalu', 'ucapanPenangguhan'].map(category => (
-                    <div key={category} className="space-y-2">
-                      <Label className="font-semibold">{categoryLabels[category as keyof typeof categoryLabels]}</Label>
-                      {settings.frequentContents
-                        .filter(f => f.category === category)
-                        .map(content => (
-                          <div key={content.id} className="flex items-start gap-2 p-2 rounded border bg-slate-50 dark:bg-slate-900">
-                            <div className="flex-1 space-y-2">
-                              <Input 
-                                value={content.name}
-                                onChange={e => updateFrequentContent(content.id, { name: e.target.value })}
-                                placeholder="Nama"
-                                className="bg-white dark:bg-slate-800"
-                              />
-                              <Textarea 
-                                value={content.content}
-                                onChange={e => updateFrequentContent(content.id, { content: e.target.value })}
-                                placeholder="Kandungan"
-                                className="bg-white dark:bg-slate-800"
-                              />
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => removeFrequentContent(content.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        ))}
-                    </div>
-                  ))}
-                  
-                  <Separator />
-                  
-                  <div className="space-y-2">
-                    <Label>Tambah Kandungan Kerap Baru</Label>
-                    <div className="grid gap-2">
-                      <Input 
-                        value={newFrequent.name}
-                        onChange={e => setNewFrequent(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Nama kandungan"
-                      />
-                      <Select 
-                        value={newFrequent.category}
-                        onValueChange={v => setNewFrequent(prev => ({ ...prev, category: v as FrequentContent['category'] }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ucapanPengerusi">Ucapan Pengerusi</SelectItem>
-                          <SelectItem value="minitLalu">Minit Mesyuarat Lalu</SelectItem>
-                          <SelectItem value="ucapanPenangguhan">Ucapan Penangguhan</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Textarea 
-                        value={newFrequent.content}
-                        onChange={e => setNewFrequent(prev => ({ ...prev, content: e.target.value }))}
-                        placeholder="Kandungan..."
-                      />
-                      <Button onClick={handleAddFrequent}>
-                        <Plus className="h-4 w-4 mr-2" /> Tambah
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            {/* Font Settings */}
-            <TabsContent value="font" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Pilihan Font</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Font Dokumen</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Pilih font untuk dokumen yang dijana
-                      </p>
-                    </div>
+            <TabsContent value="frequent" className="space-y-6 mt-0">
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <SectionHeader number="01" title="Kandungan Kerap" />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={newFrequent.name}
+                      onChange={e => setNewFrequent(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Nama"
+                      className="h-8 text-xs w-32 border-slate-200 rounded-none"
+                    />
                     <Select 
-                      value={settings.font}
-                      onValueChange={v => updateSettings({ font: v as 'calibri' | 'timesNewRoman' })}
+                      value={newFrequent.category}
+                      onValueChange={v => setNewFrequent(prev => ({ ...prev, category: v as FrequentContent['category'] }))}
                     >
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="h-8 text-xs w-32 rounded-none border-slate-200">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="calibri">Calibri</SelectItem>
-                        <SelectItem value="timesNewRoman">Times New Roman</SelectItem>
+                        {categoryOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    <Button 
+                      onClick={handleAddFrequent}
+                      className="btn-primary h-8"
+                      size="sm"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span className="text-[10px]">Tambah</span>
+                    </Button>
                   </div>
-                  
-                  <div className="p-4 rounded border bg-slate-50 dark:bg-slate-900">
-                    <p className="text-sm text-muted-foreground mb-2">Pratonton:</p>
-                    <p style={{ fontFamily: settings.font === 'calibri' ? 'Calibri, sans-serif' : 'Times New Roman, serif' }}>
-                      MINIT MESYUARAT PANITIA BAHASA ARAB
-                    </p>
-                    <p style={{ fontFamily: settings.font === 'calibri' ? 'Calibri, sans-serif' : 'Times New Roman, serif' }}>
-                      Ini adalah contoh teks biasa untuk dokumen mesyuarat.
-                    </p>
+                </div>
+                <div className="border-l border-t border-r border-[var(--grid-border)]">
+                  <div className="max-h-[50vh] overflow-y-auto bg-white">
+                    {categoryOptions.map(cat => (
+                      <div key={cat.value} className="border-b border-[var(--grid-border)]">
+                        <div className="p-3 bg-slate-50 border-b border-[var(--grid-border)]">
+                          <h4 className="font-bold text-xs uppercase tracking-wide">{cat.label}</h4>
+                        </div>
+                        <div className="divide-y divide-[var(--grid-border)]">
+                          {settings.frequentContent
+                            .filter(c => c.category === cat.value)
+                            .map(content => (
+                              <div 
+                                key={content.id} 
+                                className="p-3 hover:bg-primary/5 transition-colors"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm">{content.name}</div>
+                                    <div className="text-[10px] text-slate-500 mt-0.5 line-clamp-2">{content.content}</div>
+                                  </div>
+                                  <div className="flex items-center gap-0.5 shrink-0">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="h-6 w-6 rounded-none"
+                                      onClick={() => {
+                                        if (editingFrequent?.id === content.id) {
+                                          updateFrequentContent(content.id, editingFrequent)
+                                          setEditingFrequent(null)
+                                          toast.success('Kandungan berjaya dikemaskini')
+                                        } else {
+                                          setEditingFrequent(content)
+                                        }
+                                      }}
+                                    >
+                                      {editingFrequent?.id === content.id ? (
+                                        <Check className="h-3 w-3 text-primary" />
+                                      ) : (
+                                        <span className="text-[10px]">Edit</span>
+                                      )}
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="h-6 w-6 rounded-none"
+                                      onClick={() => {
+                                        removeFrequentContent(content.id)
+                                        toast.success('Kandungan berjaya dipadam')
+                                      }}
+                                    >
+                                      <Trash2 className="h-3 w-3 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          {settings.frequentContent.filter(c => c.category === cat.value).length === 0 && (
+                            <p className="p-3 text-[10px] text-slate-500">Tiada kandungan kerap</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base text-red-600">Set Semula Tetapan</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Ini akan memadamkan semua tetapan termasuk logo dan tandatangan yang telah dimuat naik.
-                  </p>
-                  <Button variant="destructive" onClick={() => {
-                    resetSettings()
-                    toast.success('Tetapan telah diset semula')
-                  }}>
-                    Set Semula ke Tetapan Asal
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </section>
             </TabsContent>
-          </ScrollArea>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
