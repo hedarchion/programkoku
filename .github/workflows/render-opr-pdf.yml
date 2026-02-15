@@ -1,0 +1,37 @@
+name: Render OPR PDF
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload_path:
+        description: "Path to OPR payload JSON file"
+        required: true
+        default: "upload/opr-jobs/opr-job.json"
+      output_name:
+        description: "Output PDF file name"
+        required: true
+        default: "OPR.pdf"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Render PDF
+        run: bun scripts/render-opr-pdf.ts "${{ inputs.payload_path }}" "download/${{ inputs.output_name }}"
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opr-pdf
+          path: download/${{ inputs.output_name }}
+          if-no-files-found: error

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "generatedAt": "2026-02-14T00:00:00.000Z",
+  "data": {
+    "namaProgram": "MESYUARAT AGUNG PPIM 2026",
+    "tarikh": "2026-01-21",
+    "masa": "12.50 - 1.50 PTG",
+    "tempat": "SURAU SK AYER TAWAR",
+    "kehadiranSasaran": "SEMUA MURID PERGERAKAN PUTERI ISLAM MALAYSIA (PPIM)\nSK AYER TAWAR",
+    "isuMasalah": "Berjalan seperti telah dirancang",
+    "aktiviti": [
+      "Guru-guru penasihat dan murid-murid berkumpul di surau dan mengambil kehadiran.",
+      "Kata aluan daripada ketua guru penasihat.",
+      "Nyanyian Asma Ul-Husna dan lagu PPIM.",
+      "Perlantikan Jawatankuasa PPIM (murid).",
+      "Perbincangan aktiviti tahunan.",
+      "Hal-hal lain.",
+      "Ucapan penutupan."
+    ],
+    "gambarBase64": [],
+    "imageLayout": "grid",
+    "schoolName": "SEKOLAH KEBANGSAAN AYER TAWAR",
+    "schoolCode": "ABA1006",
+    "schoolAddress": "32400 AYER TAWAR, PERAK",
+    "logo1Base64": null,
+    "logo2Base64": null,
+    "pegawaiTerlibat": [
+      "PN. KHADIJAH",
+      "PN. IFA YUSNANI",
+      "PN. NUR SAFRINA"
+    ],
+    "namaPgb": "EN. MEGAT NOR SHAHFIEE BIN MEGAT HUSSIN",
+    "preparedBy": "PN. KHADIJAH BINTI IBRAHIM / KETUA GURU PENASIHAT PPIM",
+    "font": "calibri"
+  }
+}
