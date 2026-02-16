@@ -665,6 +665,7 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
               </div>
               <Checkbox
                 checked={selectedMembers.includes(member.id)}
+                onClick={e => e.stopPropagation()}
                 onCheckedChange={() => toggleMember(member.id)}
                 className="shrink-0 rounded-none border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
