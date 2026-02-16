@@ -1,6 +1,9 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback, useRef } from 'react'
+// Import default logos - Next.js handles these as static assets
+import logoKiri from '../../public/logos/kiri.png'
+import logoKanan from '../../public/logos/kanan.png'
 
 export interface Member {
   id: string
@@ -104,18 +107,26 @@ const createDefaultProfile = (): Profile => ({
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
-// Helper to load image and convert to base64
-async function loadImageAsBase64(url: string): Promise<string | null> {
+// Helper to fetch image and convert to base64
+async function fetchImageAsBase64(url: string): Promise<string | null> {
   try {
     const response = await fetch(url)
-    if (!response.ok) return null
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${response.status} ${response.statusText}`)
+      return null
+    }
     const blob = await response.blob()
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = () => {
+        console.error('FileReader error for URL:', url)
+        resolve(null)
+      }
       reader.readAsDataURL(blob)
     })
-  } catch {
+  } catch (error) {
+    console.error(`Error fetching image from ${url}:`, error)
     return null
   }
 }
@@ -147,10 +158,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           const needsLogo2 = !currentProfile.settings.logo2
           
           if (needsLogo1 || needsLogo2) {
+            console.log('Loading default logos...', { logoKiri, logoKanan })
             const [logo1Base64, logo2Base64] = await Promise.all([
-              needsLogo1 ? loadImageAsBase64('/logos/kiri.png') : Promise.resolve(null),
-              needsLogo2 ? loadImageAsBase64('/logos/kanan.png') : Promise.resolve(null)
+              needsLogo1 ? fetchImageAsBase64(logoKiri.src) : Promise.resolve(null),
+              needsLogo2 ? fetchImageAsBase64(logoKanan.src) : Promise.resolve(null)
             ])
+            
+            console.log('Logo loading result:', { logo1Base64: !!logo1Base64, logo2Base64: !!logo2Base64 })
             
             if (logo1Base64 || logo2Base64) {
               loadedProfiles = loadedProfiles.map(p => {
@@ -174,7 +188,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setProfiles(loadedProfiles)
         setCurrentProfileId(loadedProfileId)
         setIsHydrated(true)
-      } catch {
+      } catch (error) {
+        console.error('Error in loadSettingsAndLogos:', error)
         setIsHydrated(true)
       }
     }
