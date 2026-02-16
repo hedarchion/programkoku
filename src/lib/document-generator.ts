@@ -932,7 +932,9 @@ export async function generateOprImage(data: OprData): Promise<Blob> {
       quality: 1,
       pixelRatio: 2,
       cacheBust: true,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      skipFonts: true,
+      fontEmbedCSS: ''
     })
     
     const response = await fetch(dataUrl)
