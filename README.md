@@ -1,6 +1,6 @@
 # MM Maker — Minit Mesyuarat & OPR Generator
 
-A single-page, client-heavy Next.js 16 experience for Malaysian panitia teams to write meeting minutes and One Page Reports, upload supporting images/signatures, and publish finished documents without any server runtime. The entire UI + data workflow runs inside the browser, while document export relies on `docx`, `html-to-image`, and optional Puppeteer helpers.
+A single-page, client-heavy Next.js 16 experience for Malaysian panitia teams to write meeting minutes and One Page Reports, upload supporting images/signatures, and publish finished documents without any server runtime. The entire UI + data workflow runs inside the browser, while document export relies on `docx`, `html-to-image`, and browser print-to-PDF.
 
 ## What it does
 - Provides a two-tab workflow for **Minit Mesyuarat** and **OPR** documentation with sticky top navigation, profile-aware settings, and downloadable Docx/PDF outputs.
@@ -12,8 +12,7 @@ A single-page, client-heavy Next.js 16 experience for Malaysian panitia teams to
 - **Next.js 16 + TypeScript** with the App Router and `output: "export"` (see `next.config.ts`), so `bun run build` emits a static `out/` folder and `bun start` serves it through the `python -m http.server` shim in `package.json`.
 - **Bun** as the package runner (`bun install`, `bun run dev`, etc.) and `tailwindcss@4` for styling; the global themes live in `src/app/globals.css` (tokens for `--grid-border`, `--focus-bg`, `section-badge`, etc.).
 - **SettingsProvider** orchestrates every profile, member, and frequent content item. The UI components (`settings-panel`, forms for mesyuarat and OPR) consume this provider to render the settings drawer without server data.
-- **Document generation** is client-side only: `generateMinitDocx`, `generateOprImage`, and `generateOprPdfClient` live in `src/lib/document-generator.ts`, imitating the older Puppeteer service but without server rendering.
-- **Optional PDF microservice** still exists in `mini-services/pdf-service/` for the Docker-powered Puppeteer pipeline described in `LOCAL_DEV.md`.
+- **Document generation** is client-side only: `generateMinitDocx`, `generateOprImage`, and `generateOprPdfClient` live in `src/lib/document-generator.ts` for browser-based export.
 
 ## Responsive layout (mobile/tablet view)
 - `src/app/page.tsx` wraps everything in `<main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-32">`; the tab list, generation controls, and grid sections collapse with `grid grid-cols-1 lg:grid-cols-2` and `sm:grid-cols-2` classes so small screens stack naturally.
@@ -22,10 +21,9 @@ A single-page, client-heavy Next.js 16 experience for Malaysian panitia teams to
 
 ## Local development
 1. `bun install`
-2. Copy `.env.local.example` to `.env.local` (used primarily by the Docker PDF service).
-3. **Recommended:** run `./scripts/start-local.sh` to fire up the Dockerized Puppeteer PDF generator (requires Docker); the helper waits for health checks on `http://localhost:3001` before launching `bun run dev` on port 3000.
-4. **Alternative:** start only the Next.js app with `bun run dev` when the PDF service is unavailable; document generation still works via the browser print dialog.
-5. Use `bun run lint` + `bun run build` before publishing.
+2. Copy `.env.local.example` to `.env.local` if needed for your configuration.
+3. Run `bun run dev` to start the development server on port 3000.
+4. Use `bun run lint` + `bun run build` before publishing.
 
 ## Publishing
 - The default `next.config.ts` sets `output: "export"`, so `bun run build` produces static files under `out/`. You can serve that folder via `bun start` or push it to GitHub Pages/another static host.
@@ -39,7 +37,7 @@ src/
 │   └── ui/            # shadcn-inspired primitives (tabs, sheet, dialog, buttons, inputs)
 ├── hooks/             # Reusable React hooks
 ├── lib/               # Settings context + document generation helpers
-└── mini-services/     # Optional Docker/Puppeteer PDF service (runs separately)
+
 ```
 
 ## Tips & tooling

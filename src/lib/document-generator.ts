@@ -46,6 +46,15 @@ function getPdfFontName(font?: string): string {
   return font === 'times' ? 'times' : 'helvetica'
 }
 
+function getYearFromTarikh(tarikh: string): string {
+  if (!tarikh) return new Date().getFullYear().toString()
+  try {
+    return new Date(tarikh).getFullYear().toString()
+  } catch {
+    return new Date().getFullYear().toString()
+  }
+}
+
 interface AhliEntry {
   id: string
   nama: string
@@ -70,7 +79,6 @@ interface AgendaItem {
 
 interface MinitData {
   bilangan: string
-  tahun: string
   tarikh: string
   hari: string
   masa: string
@@ -164,7 +172,7 @@ export async function generateMinitDocx(data: MinitData): Promise<Blob> {
         children: [
           new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: "MINIT MESYUARAT PANITIA", bold: true, size: TITLE_SIZE, font: fontName })] }),
           new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: data.panitia.toUpperCase(), bold: true, size: TITLE_SIZE, font: fontName })] }),
-          new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 50 }, children: [new TextRun({ text: `BIL. ${data.bilangan} SESI ${data.tahun}`, bold: true, size: SUBTITLE_SIZE, font: fontName })] })
+          new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 50 }, children: [new TextRun({ text: `BIL. ${data.bilangan} SESI ${getYearFromTarikh(data.tarikh)}`, bold: true, size: SUBTITLE_SIZE, font: fontName })] })
         ]
       })
     )
@@ -178,10 +186,10 @@ export async function generateMinitDocx(data: MinitData): Promise<Blob> {
     children.push(
       new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: "MINIT MESYUARAT PANITIA", bold: true, size: TITLE_SIZE, font: fontName })] }),
       new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: data.panitia.toUpperCase(), bold: true, size: TITLE_SIZE, font: fontName })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: `BIL. ${data.bilangan} SESI ${data.tahun}`, bold: true, size: SUBTITLE_SIZE, font: fontName })] })
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: `BIL. ${data.bilangan} SESI ${getYearFromTarikh(data.tarikh)}`, bold: true, size: SUBTITLE_SIZE, font: fontName })] })
     )
   }
-  
+
   // Horizontal line
   children.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000" } }, spacing: { after: 200 }, children: [] }))
 
@@ -430,7 +438,7 @@ export async function generateMinitPdf(data: MinitData): Promise<Blob> {
     doc.text('MINIT MESYUARAT PANITIA', titleCenterX, y + 8, { align: 'center' })
     doc.text(data.panitia.toUpperCase(), titleCenterX, y + 15, { align: 'center' })
     doc.setFontSize(SUBTITLE_SIZE)
-    doc.text(`BIL. ${data.bilangan} SESI ${data.tahun}`, titleCenterX, y + 22, { align: 'center' })
+    doc.text(`BIL. ${data.bilangan} SESI ${getYearFromTarikh(data.tarikh)}`, titleCenterX, y + 22, { align: 'center' })
     
     if (data.logo2Base64) {
       try {
@@ -446,10 +454,10 @@ export async function generateMinitPdf(data: MinitData): Promise<Blob> {
     doc.text('MINIT MESYUARAT PANITIA', pageWidth / 2, y + 8, { align: 'center' })
     doc.text(data.panitia.toUpperCase(), pageWidth / 2, y + 15, { align: 'center' })
     doc.setFontSize(SUBTITLE_SIZE)
-    doc.text(`BIL. ${data.bilangan} SESI ${data.tahun}`, pageWidth / 2, y + 22, { align: 'center' })
+    doc.text(`BIL. ${data.bilangan} SESI ${getYearFromTarikh(data.tarikh)}`, pageWidth / 2, y + 22, { align: 'center' })
     y += 30
   }
-  
+
   // Horizontal line
   doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.5)
@@ -740,7 +748,7 @@ function drawLogoSlotPdf(
     drawImageFitPdf(doc, imageBase64, x + 1, y + 1, w - 2, h - 2)
   } else {
     doc.setTextColor(96, 140, 170)
-    doc.setFont(fontFamily, 'bold')
+    doc.setFont('helvetica', 'bold')
     doc.setFontSize(7)
     doc.text('LOGO', x + w / 2, y + h / 2 + 0.6, { align: 'center' })
   }

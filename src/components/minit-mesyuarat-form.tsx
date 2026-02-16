@@ -35,7 +35,6 @@ interface AgendaItem {
 
 interface MinitFormData {
   bilangan: string
-  tahun: string
   tarikh: string
   hari: string
   masa: string
@@ -107,6 +106,15 @@ const formatTimeWithSuffix = (time: string): string => {
   const suffix = getTimeSuffix(time)
   const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)
   return `${displayHour}.${minutes} ${suffix}`
+}
+
+const getYearFromTarikh = (tarikh: string): string => {
+  if (!tarikh) return new Date().getFullYear().toString()
+  try {
+    return new Date(tarikh).getFullYear().toString()
+  } catch {
+    return new Date().getFullYear().toString()
+  }
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9)
@@ -200,7 +208,6 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
   
   const [data, setData] = useState<MinitFormData>(() => ({
     bilangan: '1',
-    tahun: new Date().getFullYear().toString(),
     tarikh: '',
     hari: '',
     masa: '',
@@ -573,14 +580,6 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
               className="border-0 p-0 text-sm font-medium bg-transparent focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" 
             />
           </FormCell>
-          <FormCell label="Tahun">
-            <Input 
-              value={data.tahun} 
-              onChange={e => updateField('tahun', e.target.value)} 
-              placeholder="2025"
-              className="border-0 p-0 text-sm font-medium bg-transparent focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" 
-            />
-          </FormCell>
           <FormCell label="Tarikh">
             <Input 
               type="date"
@@ -837,7 +836,7 @@ export default function MinitMesyuaratForm({ onDataChange }: Props) {
                       onClick={() => {
                         let content = fc.content
                           .replace('[bil]', String(parseInt(data.bilangan) - 1))
-                          .replace('[tahun]', data.tahun)
+                          .replace('[tahun]', getYearFromTarikh(data.tarikh))
                         updateField('minitLalu', { ...data.minitLalu, dibentang: content })
                       }}
                     >

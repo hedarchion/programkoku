@@ -45,9 +45,9 @@
 }
 
 :root {
-  /* Calming Blue Color Palette */
+  /* Calming Blue Color Palette - Darker hue inspired by inspiration.html */
   --radius: 0;
-  --background: #f8fafc;
+  --background: #f4f6f2;
   --foreground: #1e293b;
   --card: #ffffff;
   --card-foreground: #1e293b;
@@ -86,7 +86,7 @@
 }
 
 .dark {
-  --background: #0f172a;
+  --background: #1a1f1a;
   --foreground: #f8fafc;
   --card: #1e293b;
   --card-foreground: #f8fafc;

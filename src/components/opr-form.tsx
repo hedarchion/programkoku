@@ -184,6 +184,31 @@ export default function OprForm({ onDataChange }: Props) {
   }
 
   const completedAktiviti = data.aktiviti.filter(a => a.trim()).length
+  const officerCount = data.pegawaiTerlibat.filter(p => p.trim()).length
+  
+  // Layout limit warnings
+  const getActivityWarning = () => {
+    if (data.aktiviti.length >= 8) return { type: 'error', msg: 'Maksimum 8 aktiviti untuk satu halaman A4' }
+    if (data.aktiviti.length >= 6) return { type: 'warning', msg: '6+ aktiviti akan menggunakan susunan padat' }
+    return null
+  }
+  
+  const getOfficerWarning = () => {
+    if (officerCount >= 12) return { type: 'error', msg: 'Maksimum 12 pegawai untuk satu halaman A4' }
+    if (officerCount >= 8) return { type: 'warning', msg: '8+ pegawai akan menggunakan susunan padat' }
+    return null
+  }
+  
+  const getImageWarning = () => {
+    if (data.gambarBase64.length >= 8) return { type: 'error', msg: 'Maksimum 8 gambar untuk satu halaman A4' }
+    if (data.gambarBase64.length >= 7) return { type: 'warning', msg: 'Susunan sangat padat akan digunakan' }
+    if (data.gambarBase64.length >= 5) return { type: 'info', msg: '5+ gambar akan menggunakan susunan padat' }
+    return null
+  }
+  
+  const activityWarning = getActivityWarning()
+  const officerWarning = getOfficerWarning()
+  const imageWarning = getImageWarning()
 
   return (
     <div className="space-y-8">
@@ -279,7 +304,18 @@ export default function OprForm({ onDataChange }: Props) {
                       <Users className="h-3 w-3" />
                       Pegawai Terlibat
                     </label>
-                    <span className="text-[10px] text-slate-400">Satu nama per baris</span>
+                    <div className="flex items-center gap-2">
+                      {officerWarning && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 flex items-center gap-1 ${
+                          officerWarning.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
+                          'bg-amber-100 text-amber-700 border border-amber-200'
+                        }`}>
+                          <AlertCircle className="h-3 w-3" />
+                          {officerCount}/12
+                        </span>
+                      )}
+                      <span className="text-[10px] text-slate-400">Satu nama per baris</span>
+                    </div>
                   </div>
                   <Textarea
                     value={pegawaiInput}
@@ -288,6 +324,20 @@ export default function OprForm({ onDataChange }: Props) {
                     rows={4}
                     className="text-sm font-mono border-slate-200 focus:border-primary resize-none"
                   />
+                  {officerWarning && (
+                    <div className={`mt-2 p-2 text-[10px] ${
+                      officerWarning.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                      'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}>
+                      <div className="flex items-start gap-1.5">
+                        <AlertCircle className="h-3 w-3 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold">{officerWarning.type === 'error' ? 'Had Maksimum: ' : 'Amaran: '}</span>
+                          {officerWarning.msg}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Kehadiran - Full Width */}
@@ -348,6 +398,16 @@ export default function OprForm({ onDataChange }: Props) {
                       {completedAktiviti}
                     </span>
                   )}
+                  {activityWarning && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 flex items-center gap-1 ${
+                      activityWarning.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
+                      activityWarning.type === 'warning' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                      'bg-blue-100 text-blue-700 border border-blue-200'
+                    }`}>
+                      <AlertCircle className="h-3 w-3" />
+                      {activityWarning.type === 'error' ? 'Maksimum' : activityWarning.type === 'warning' ? 'Padat' : 'Info'}
+                    </span>
+                  )}
                 </div>
                 <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openSections.aktiviti ? 'rotate-180' : ''}`} />
               </div>
@@ -378,12 +438,36 @@ export default function OprForm({ onDataChange }: Props) {
                     </Button>
                   </div>
                 ))}
+                {activityWarning && (
+                  <div className={`p-3 text-xs ${
+                    activityWarning.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                    activityWarning.type === 'warning' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                    'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">
+                          {activityWarning.type === 'error' ? 'Had Maksimum Dicapai' : 
+                           activityWarning.type === 'warning' ? 'Susunan Padat' : 'Maklumat'}
+                        </p>
+                        <p className="mt-0.5 opacity-80">{activityWarning.msg}</p>
+                        {activityWarning.type === 'error' && (
+                          <p className="mt-1 text-[10px] opacity-70">Lebih daripada 8 aktiviti akan dipotong untuk muat dalam satu halaman A4.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <button 
                   onClick={addAktiviti}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-slate-300 hover:border-primary hover:bg-blue-50/30 transition-all group"
+                  disabled={data.aktiviti.length >= 8}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-slate-300 hover:border-primary hover:bg-blue-50/30 transition-all group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-300 disabled:hover:bg-transparent"
                 >
                   <Plus className="h-4 w-4 text-slate-400 group-hover:text-primary transition-colors" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-primary transition-colors">Tambah Aktiviti</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-primary transition-colors">
+                    {data.aktiviti.length >= 8 ? 'Had Maksimum (8)' : 'Tambah Aktiviti'}
+                  </span>
                 </button>
               </div>
             </CollapsibleContent>
@@ -399,8 +483,23 @@ export default function OprForm({ onDataChange }: Props) {
             <div className="flex items-center gap-3">
               <ImageIcon className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold uppercase tracking-wide">Muat Naik Gambar</span>
+              {imageWarning && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 flex items-center gap-1 ${
+                  imageWarning.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
+                  imageWarning.type === 'warning' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                  'bg-blue-100 text-blue-700 border border-blue-200'
+                }`}>
+                  <AlertCircle className="h-3 w-3" />
+                  {imageWarning.type === 'error' ? 'Maks' : imageWarning.type === 'warning' ? 'Padat' : 'Info'}
+                </span>
+              )}
             </div>
-            <span className={`text-[10px] font-bold px-2 py-1 ${data.gambarBase64.length > 0 ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600'}`}>
+            <span className={`text-[10px] font-bold px-2 py-1 ${
+              data.gambarBase64.length >= 8 ? 'bg-red-500 text-white' :
+              data.gambarBase64.length >= 5 ? 'bg-amber-500 text-white' :
+              data.gambarBase64.length > 0 ? 'bg-primary text-white' : 
+              'bg-slate-200 text-slate-600'
+            }`}>
               {data.gambarBase64.length}/8
             </span>
           </div>
@@ -409,17 +508,52 @@ export default function OprForm({ onDataChange }: Props) {
               <span className="text-amber-600 font-bold">Format:</span> JPG, PNG, WEBP, HEIC • Max 5MB
             </p>
 
+            {imageWarning && (
+              <div className={`p-3 text-xs ${
+                imageWarning.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                imageWarning.type === 'warning' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                'bg-blue-50 text-blue-700 border border-blue-200'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">
+                      {imageWarning.type === 'error' ? 'Had Maksimum Dicapai' : 
+                       imageWarning.type === 'warning' ? 'Susunan Sangat Padat' : 'Maklumat Layout'}
+                    </p>
+                    <p className="mt-0.5 opacity-80">{imageWarning.msg}</p>
+                    {imageWarning.type === 'error' && (
+                      <p className="mt-1 text-[10px] opacity-70">
+                        Hanya 8 gambar pertama akan digunakan untuk menjana laporan.
+                      </p>
+                    )}
+                    {imageWarning.type === 'warning' && (
+                      <p className="mt-1 text-[10px] opacity-70">
+                        Gambar akan dipaparkan dalam saiz lebih kecil untuk muat dalam satu halaman.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="relative">
               <Input
                 type="file"
                 accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/heic,image/heif"
                 multiple
+                disabled={data.gambarBase64.length >= 8}
                 onChange={e => {
                   void handleImageUpload(e.target.files)
                   e.target.value = ''
                 }}
-                className="text-sm file:text-xs file:mr-3 border-slate-200 focus:border-primary cursor-pointer"
+                className="text-sm file:text-xs file:mr-3 border-slate-200 focus:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              {data.gambarBase64.length >= 8 && (
+                <p className="mt-2 text-[10px] text-red-600 font-medium">
+                  Had maksimum 8 gambar telah dicapai. Sila buang gambar untuk menambah yang baru.
+                </p>
+              )}
             </div>
 
             {data.gambarBase64.length > 0 && (

@@ -39,6 +39,7 @@ function MainContent() {
   const [oprData, setOprData] = useState<OprFormData | null>(null)
   const [minitGeneration, setMinitGeneration] = useState<GenerationState>({ status: 'idle', format: null, progress: 0 })
   const [oprGeneration, setOprGeneration] = useState<GenerationState>({ status: 'idle', format: null, progress: 0 })
+  const [activeTab, setActiveTab] = useState<string>('minit')
   const { settings, profiles, currentProfile, switchProfile } = useSettings()
 
   const handleGenerateMinit = useCallback(async (format: 'docx' | 'pdf') => {
@@ -79,7 +80,8 @@ function MainContent() {
       
       setMinitGeneration(prev => ({ ...prev, progress: 80 }))
       
-      downloadBlob(blob, `MINIT_MESYUARAT_${minitData.bilangan}_${minitData.tahun}.${format}`)
+      const tahun = minitData.tarikh ? new Date(minitData.tarikh).getFullYear().toString() : new Date().getFullYear().toString()
+      downloadBlob(blob, `MINIT_MESYUARAT_${minitData.bilangan}_${tahun}.${format}`)
       
       setMinitGeneration({ status: 'success', format, progress: 100 })
       
@@ -182,7 +184,7 @@ function MainContent() {
   const isOprGenerating = oprGeneration.status === 'generating'
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+    <div className="min-h-screen bg-[#f4f6f2] flex flex-col">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-50 bg-white border-b border-[var(--grid-border)] px-4 sm:px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -241,7 +243,7 @@ function MainContent() {
 
       <main className="flex-1 w-full">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-40 sm:pb-32">
-          <Tabs defaultValue="minit" className="w-full">
+          <Tabs defaultValue="minit" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 bg-white border border-[var(--grid-border)] p-0 h-auto rounded-none">
               <TabsTrigger 
                 value="minit" 
@@ -313,7 +315,7 @@ function MainContent() {
             </div>
             
             {/* Right: Buttons Grid */}
-            <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
               {/* Progress - Desktop */}
               {(isMintGenerating || isOprGenerating) && (
                 <div className="hidden sm:flex items-center gap-2 mr-1">
@@ -322,81 +324,88 @@ function MainContent() {
                 </div>
               )}
               
-              {/* DOCX Button */}
-              <Button 
-                onClick={() => handleGenerateMinit('docx')}
-                disabled={isMintGenerating}
-                size="sm"
-                className="btn-primary h-10 sm:h-9"
-              >
-                {minitGeneration.status === 'generating' && minitGeneration.format === 'docx' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : minitGeneration.status === 'success' && minitGeneration.format === 'docx' ? (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" />
-                )}
-                <span>DOCX</span>
-              </Button>
-              
-              {/* PDF Minit Button */}
-              <Button 
-                variant="outline"
-                onClick={() => handleGenerateMinit('pdf')}
-                disabled={isMintGenerating}
-                size="sm"
-                className="btn-dark h-10 sm:h-9 disabled:opacity-60"
-              >
-                {minitGeneration.status === 'generating' && minitGeneration.format === 'pdf' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : minitGeneration.status === 'success' && minitGeneration.format === 'pdf' ? (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                ) : (
-                  <FileCheck className="h-3.5 w-3.5" />
-                )}
-                <span className="hidden sm:inline">PDF</span>
-                <span className="sm:hidden">PDF Minit</span>
-              </Button>
+              {/* Minit Tab Buttons */}
+              {activeTab === 'minit' && (
+                <>
+                  {/* DOCX Button */}
+                  <Button 
+                    onClick={() => handleGenerateMinit('docx')}
+                    disabled={isMintGenerating}
+                    size="sm"
+                    className="btn-primary h-10 sm:h-9"
+                  >
+                    {minitGeneration.status === 'generating' && minitGeneration.format === 'docx' ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : minitGeneration.status === 'success' && minitGeneration.format === 'docx' ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    <span>DOCX</span>
+                  </Button>
+                  
+                  {/* PDF Minit Button */}
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleGenerateMinit('pdf')}
+                    disabled={isMintGenerating}
+                    size="sm"
+                    className="btn-dark h-10 sm:h-9 disabled:opacity-60"
+                  >
+                    {minitGeneration.status === 'generating' && minitGeneration.format === 'pdf' ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : minitGeneration.status === 'success' && minitGeneration.format === 'pdf' ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <FileCheck className="h-3.5 w-3.5" />
+                    )}
+                    <span className="hidden sm:inline">PDF</span>
+                    <span className="sm:hidden">PDF</span>
+                  </Button>
+                </>
+              )}
 
-              {/* Divider - Desktop */}
-              <div className="hidden sm:block h-6 w-[1px] bg-[var(--grid-border)] mx-1" />
-              
-              {/* PDF OPR Button */}
-              <Button 
-                onClick={() => handleGenerateOpr('pdf')}
-                disabled={isOprGenerating}
-                size="sm"
-                className="btn-secondary border-slate-800 text-slate-800 hover:bg-slate-100 h-10 sm:h-9 disabled:opacity-60"
-              >
-                {oprGeneration.status === 'generating' && oprGeneration.format === 'pdf' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : oprGeneration.status === 'success' && oprGeneration.format === 'pdf' ? (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                ) : (
-                  <FileCheck className="h-3.5 w-3.5" />
-                )}
-                <span className="hidden sm:inline">OPR</span>
-                <span className="sm:hidden">PDF OPR</span>
-              </Button>
+              {/* OPR Tab Buttons */}
+              {activeTab === 'opr' && (
+                <>
+                  {/* PDF OPR Button */}
+                  <Button 
+                    onClick={() => handleGenerateOpr('pdf')}
+                    disabled={isOprGenerating}
+                    size="sm"
+                    className="btn-secondary border-slate-800 text-slate-800 hover:bg-slate-100 h-10 sm:h-9 disabled:opacity-60"
+                  >
+                    {oprGeneration.status === 'generating' && oprGeneration.format === 'pdf' ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : oprGeneration.status === 'success' && oprGeneration.format === 'pdf' ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <FileCheck className="h-3.5 w-3.5" />
+                    )}
+                    <span className="hidden sm:inline">PDF</span>
+                    <span className="sm:hidden">PDF</span>
+                  </Button>
 
-              {/* PNG Button */}
-              <Button 
-                variant="outline"
-                onClick={() => handleGenerateOpr('png')}
-                disabled={isOprGenerating}
-                size="sm"
-                className="btn-secondary border-primary text-primary hover:bg-blue-50 h-10 sm:h-9 disabled:opacity-60"
-              >
-                {oprGeneration.status === 'generating' && oprGeneration.format === 'png' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : oprGeneration.status === 'success' && oprGeneration.format === 'png' ? (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                ) : (
-                  <ImageIcon className="h-3.5 w-3.5" />
-                )}
-                <span className="hidden sm:inline">IMG</span>
-                <span className="sm:hidden">Gambar</span>
-              </Button>
+                  {/* PNG Button */}
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleGenerateOpr('png')}
+                    disabled={isOprGenerating}
+                    size="sm"
+                    className="btn-secondary border-primary text-primary hover:bg-blue-50 h-10 sm:h-9 disabled:opacity-60"
+                  >
+                    {oprGeneration.status === 'generating' && oprGeneration.format === 'png' ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : oprGeneration.status === 'success' && oprGeneration.format === 'png' ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <ImageIcon className="h-3.5 w-3.5" />
+                    )}
+                    <span className="hidden sm:inline">IMG</span>
+                    <span className="sm:hidden">IMG</span>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -415,7 +424,7 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f4f6f2] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 border-2 border-primary border-t-transparent animate-spin" />
           <p className="text-sm text-slate-500 font-mono">Memuatkan...</p>
