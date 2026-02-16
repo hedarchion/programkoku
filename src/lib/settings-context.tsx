@@ -104,25 +104,76 @@ const createDefaultProfile = (): Profile => ({
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
+// Helper to load image and convert to base64
+async function loadImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return null
+    const blob = await response.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   // For CSR, start with default and only load from localStorage after mount
   const [profiles, setProfiles] = useState<Profile[]>([createDefaultProfile()])
   const [currentProfileId, setCurrentProfileId] = useState<string | null>('default')
   const [isHydrated, setIsHydrated] = useState(false)
 
-  // Load from localStorage only on client after mount
+  // Load from localStorage and preload logos on client after mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('document-generator-profiles')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (parsed.profiles) setProfiles(parsed.profiles)
-        if (parsed.currentProfileId) setCurrentProfileId(parsed.currentProfileId)
+    const loadSettingsAndLogos = async () => {
+      try {
+        let loadedProfiles: Profile[] = [createDefaultProfile()]
+        let loadedProfileId: string | null = 'default'
+        
+        const saved = localStorage.getItem('document-generator-profiles')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed.profiles) loadedProfiles = parsed.profiles
+          if (parsed.currentProfileId) loadedProfileId = parsed.currentProfileId
+        }
+        
+        // Preload default logos if not already set
+        const currentProfile = loadedProfiles.find(p => p.id === loadedProfileId) || loadedProfiles[0]
+        if (currentProfile && !currentProfile.settings.logo1 && !currentProfile.settings.logo2) {
+          const [logo1Base64, logo2Base64] = await Promise.all([
+            loadImageAsBase64('/logos/kiri.png'),
+            loadImageAsBase64('/logos/kanan.png')
+          ])
+          
+          if (logo1Base64 || logo2Base64) {
+            loadedProfiles = loadedProfiles.map(p => {
+              if (p.id === currentProfile.id) {
+                return {
+                  ...p,
+                  settings: {
+                    ...p.settings,
+                    logo1: logo1Base64 || p.settings.logo1,
+                    logo2: logo2Base64 || p.settings.logo2
+                  }
+                }
+              }
+              return p
+            })
+          }
+        }
+        
+        setProfiles(loadedProfiles)
+        setCurrentProfileId(loadedProfileId)
+        setIsHydrated(true)
+      } catch {
+        setIsHydrated(true)
       }
-      setIsHydrated(true)
-    } catch {
-      setIsHydrated(true)
     }
+    
+    loadSettingsAndLogos()
   }, [])
 
   // Debounced save to localStorage
