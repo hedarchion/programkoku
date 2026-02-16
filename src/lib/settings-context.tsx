@@ -142,26 +142,32 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         
         // Preload default logos if not already set
         const currentProfile = loadedProfiles.find(p => p.id === loadedProfileId) || loadedProfiles[0]
-        if (currentProfile && !currentProfile.settings.logo1 && !currentProfile.settings.logo2) {
-          const [logo1Base64, logo2Base64] = await Promise.all([
-            loadImageAsBase64('/logos/kiri.png'),
-            loadImageAsBase64('/logos/kanan.png')
-          ])
+        if (currentProfile) {
+          const needsLogo1 = !currentProfile.settings.logo1
+          const needsLogo2 = !currentProfile.settings.logo2
           
-          if (logo1Base64 || logo2Base64) {
-            loadedProfiles = loadedProfiles.map(p => {
-              if (p.id === currentProfile.id) {
-                return {
-                  ...p,
-                  settings: {
-                    ...p.settings,
-                    logo1: logo1Base64 || p.settings.logo1,
-                    logo2: logo2Base64 || p.settings.logo2
+          if (needsLogo1 || needsLogo2) {
+            const [logo1Base64, logo2Base64] = await Promise.all([
+              needsLogo1 ? loadImageAsBase64('/logos/kiri.png') : Promise.resolve(null),
+              needsLogo2 ? loadImageAsBase64('/logos/kanan.png') : Promise.resolve(null)
+            ])
+            
+            if (logo1Base64 || logo2Base64) {
+              loadedProfiles = loadedProfiles.map(p => {
+                if (p.id === currentProfile.id) {
+                  return {
+                    ...p,
+                    settings: {
+                      ...p.settings,
+                      logo1: logo1Base64 || p.settings.logo1,
+                      logo2: logo2Base64 || p.settings.logo2
+                    },
+                    updatedAt: new Date().toISOString()
                   }
                 }
-              }
-              return p
-            })
+                return p
+              })
+            }
           }
         }
         
