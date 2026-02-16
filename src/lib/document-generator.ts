@@ -896,23 +896,46 @@ export async function generateOprHtml(data: OprData): Promise<Blob> {
   return new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
 }
 
+// Detect mobile devices (phones and tablets)
+function isMobileDevice(): boolean {
+  const ua = navigator.userAgent.toLowerCase()
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/.test(ua)
+}
+
+// Detect Safari/iOS browser
+function isSafariMobile(): boolean {
+  const ua = navigator.userAgent.toLowerCase()
+  const isIOS = /iphone|ipad|ipod/.test(ua)
+  const isSafari = /safari/.test(ua) && !/(chrome|crios|crmo)/.test(ua)
+  return isIOS && isSafari
+}
+
+function isIOS(): boolean {
+  return /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())
+}
+
 export async function generateOprImage(data: OprData): Promise<Blob> {
+  // Check if mobile device - image generation not supported
+  if (isMobileDevice()) {
+    throw new Error('MOBILE_NOT_SUPPORTED')
+  }
+
   const parts = getOprHtmlParts(data)
-  
+   
   // Create off-screen container - must be visible for proper rendering
   const container = document.createElement('div')
   container.style.position = 'fixed'
   container.style.top = '-9999px'
   container.style.left = '-9999px'
   container.style.zIndex = '-1'
-  
+   
   container.innerHTML = `
     <style>${parts.style}</style>
     ${parts.body}
   `
-  
+   
   document.body.appendChild(container)
-  
+   
   try {
     const page = container.querySelector('.container') as HTMLElement | null
     if (!page) {
@@ -947,11 +970,52 @@ export async function generateOprImage(data: OprData): Promise<Blob> {
 export async function generateOprPdfClient(data: OprData): Promise<void> {
   const parts = getSharedOprHtmlParts(data)
   
+  // Check for Safari Mobile and show helpful message
+  const safariMobile = isSafariMobile()
+  const ios = isIOS()
+  
+  if (safariMobile) {
+    // Show Safari-specific instructions before opening print window
+    const confirmed = window.confirm(
+      'Panduan untuk Safari iOS:\n\n' +
+      '1. Tetingkap cetakan akan dibuka\n' +
+      '2. Tekan butang "Share" (□→) di bar alat\n' +
+      '3. Pilih "Options" dan tukar ke PDF\n' +
+      '4. Tekan "Save to Files" atau "Share"\n\n' +
+      'Klik OK untuk meneruskan...'
+    )
+    if (!confirmed) return
+  } else if (ios) {
+    // Generic iOS message for other browsers
+    const confirmed = window.confirm(
+      'Panduan untuk iOS:\n\n' +
+      '1. Tetingkap cetakan akan dibuka\n' +
+      '2. Tekan butang "Share" (□→)\n' +
+      '3. Pilih "Save to Files" untuk simpan sebagai PDF\n\n' +
+      'Klik OK untuk meneruskan...'
+    )
+    if (!confirmed) return
+  }
+  
   // Open a new window for browser-native PDF generation via print
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
     throw new Error('Pop-up blocker menghalang tetingkap cetakan. Sila benarkan pop-up untuk laman ini.')
   }
+
+  const safariInstructions = safariMobile ? `
+    <div id="safari-help" style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; max-width: 90%; z-index: 9999; font-family: -apple-system, BlinkMacSystemFont, sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+      <div style="font-weight: bold; color: #856404; margin-bottom: 8px; font-size: 16px;">📱 Panduan Safari iOS</div>
+      <div style="color: #856404; font-size: 14px; line-height: 1.5;">
+        <div style="margin-bottom: 6px;">1. Tekan butang <strong>Share (□→)</strong> di bar alat bawah</div>
+        <div style="margin-bottom: 6px;">2. Scroll dan pilih <strong>"Options"</strong></div>
+        <div style="margin-bottom: 6px;">3. Tukar format kepada <strong>PDF</strong></div>
+        <div style="margin-bottom: 6px;">4. Tekan <strong>"Done"</strong></div>
+        <div>5. Pilih <strong>"Save to Files"</strong> atau <strong>"Share"</strong></div>
+      </div>
+      <button onclick="document.getElementById('safari-help').style.display='none'" style="margin-top: 10px; background: #ffc107; color: #856404; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%;">Faham, Tutup Panduan</button>
+    </div>
+  ` : ''
 
   const doc = printWindow.document
   doc.open()
@@ -960,6 +1024,7 @@ export async function generateOprPdfClient(data: OprData): Promise<void> {
     <html lang="ms">
       <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${parts.title}</title>
         <style>
           ${parts.style}
@@ -984,17 +1049,21 @@ export async function generateOprPdfClient(data: OprData): Promise<void> {
               margin: 0 !important;
               overflow: hidden !important;
             }
+            #safari-help {
+              display: none !important;
+            }
           }
         </style>
       </head>
       <body>
+        ${safariInstructions}
         ${parts.body}
         <script>
           window.onload = function() {
             setTimeout(function() {
               window.focus();
               window.print();
-            }, 800);
+            }, ${safariMobile ? '2000' : '800'});
           };
         </script>
       </body>

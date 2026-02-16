@@ -169,10 +169,20 @@ function MainContent() {
     } catch (error) {
       console.error('OPR generation error:', error)
       setOprGeneration({ status: 'error', format, progress: 0 })
-      toast.error('Ralat semasa menjana dokumen', {
-        description: error instanceof Error ? error.message : 'Sila cuba lagi',
-        icon: <AlertCircle className="h-4 w-4 text-red-500" />
-      })
+      
+      // Check for mobile not supported error
+      if (error instanceof Error && error.message === 'MOBILE_NOT_SUPPORTED') {
+        toast.error('Penjanaan imej tidak disokong pada peranti mudah alih', {
+          description: 'Sila gunakan butang PDF untuk menjana laporan',
+          duration: 5000,
+          icon: <AlertCircle className="h-4 w-4 text-amber-500" />
+        })
+      } else {
+        toast.error('Ralat semasa menjana dokumen', {
+          description: error instanceof Error ? error.message : 'Sila cuba lagi',
+          icon: <AlertCircle className="h-4 w-4 text-red-500" />
+        })
+      }
       
       setTimeout(() => {
         setOprGeneration({ status: 'idle', format: null, progress: 0 })
